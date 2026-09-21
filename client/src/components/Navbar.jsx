@@ -56,9 +56,9 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 bg-[#C81E3A] dark:bg-slate-900/95 backdrop-blur-md border-b border-[#A0182E] dark:border-slate-800 text-white dark:text-slate-100 shadow-md shadow-red-900/10 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         
-        {/* Brand Logo - 100% Crisp Visibility in Light & Dark Mode */}
+        {/* Brand Logo - Vibrant Green Icon Box */}
         <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="w-10 h-10 rounded-xl bg-white text-[#C81E3A] dark:bg-primary-600 dark:text-white flex items-center justify-center font-bold shadow-md group-hover:scale-105 transition-transform">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white dark:bg-emerald-600 dark:text-white flex items-center justify-center font-bold shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform">
             <Activity className="w-6 h-6 stroke-[2.5]" />
           </div>
           <div className="flex flex-col">
@@ -258,7 +258,7 @@ export default function Navbar() {
               </Link>
               <Link
                 to="/signup"
-                className="text-xs font-extrabold bg-white text-[#C81E3A] hover:bg-red-50 dark:bg-primary-600 dark:text-white dark:hover:bg-primary-700 px-3.5 py-2 rounded-xl shadow-md transition-all"
+                className="text-xs font-extrabold bg-emerald-500 hover:bg-emerald-600 text-white dark:bg-emerald-600 dark:hover:bg-emerald-700 px-3.5 py-2 rounded-xl shadow-md shadow-emerald-500/20 transition-all"
               >
                 Get Started
               </Link>
