@@ -250,6 +250,85 @@ let auditLogs = [
   }
 ];
 
+// Patient Files Base Profiles
+let patientFiles = [
+  {
+    id: 'pf-1',
+    patient_id: 'user-1',
+    patient_code: 'MED1024',
+    age: 24,
+    gender: 'Male',
+    blood_group: 'B+',
+    allergies: 'Penicillin (mild rash)',
+    chronic_conditions: 'Mild seasonal asthma',
+    created_at: new Date('2026-01-01').toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'pf-2',
+    patient_id: 'user-2',
+    patient_code: 'MED1025',
+    age: 32,
+    gender: 'Male',
+    blood_group: 'O+',
+    allergies: 'None known',
+    chronic_conditions: 'Hypertension',
+    created_at: new Date('2026-01-05').toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'pf-3',
+    patient_id: 'user-3',
+    patient_code: 'MED1026',
+    age: 29,
+    gender: 'Female',
+    blood_group: 'A+',
+    allergies: 'Sulfa drugs',
+    chronic_conditions: 'None',
+    created_at: new Date('2026-01-08').toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
+
+// Consultations History Records
+let consultations = [
+  {
+    id: 'cons-1',
+    patient_id: 'user-1',
+    doctor_id: 'doc-user-1',
+    doctor_name: 'Dr. Rajesh Sharma',
+    queue_token_id: 'tok-101',
+    token_number: '101',
+    department_id: 'dept-1',
+    department_name: 'Cardiology',
+    hospital_id: 'hosp-1',
+    hospital_name: 'City Care Super Specialty Hospital',
+    chief_complaint: 'Fever, mild shortness of breath during exertion',
+    symptoms: 'Low-grade fever (99.8°F), fatigue, chest tightness',
+    observations: 'BP: 120/80 mmHg, HR: 82 bpm, SpO2: 98% on room air',
+    diagnosis: 'Mild exertion fatigue, Normal sinus rhythm on ECG',
+    treatment_advice: 'Advised rest, oral hydration, and follow-up ECG if symptoms persist',
+    prescription_notes: 'Tab Paracetamol 500mg as needed, Multivitamin once daily',
+    follow_up_instructions: 'Follow up in 2 weeks or if chest tightness increases',
+    additional_remarks: 'Patient reported mild stress due to work travel.',
+    visit_date: new Date('2026-09-12T10:30:00Z').toISOString(),
+    created_at: new Date('2026-09-12T10:30:00Z').toISOString(),
+    updated_at: new Date('2026-09-12T10:30:00Z').toISOString()
+  }
+];
+
+let consultationAuditLogs = [
+  {
+    id: 'c-audit-1',
+    consultation_id: 'cons-1',
+    doctor_id: 'doc-user-1',
+    doctor_name: 'Dr. Rajesh Sharma',
+    patient_id: 'user-1',
+    action: 'CONSULTATION_CREATED',
+    timestamp: new Date('2026-09-12T10:30:00Z').toISOString()
+  }
+];
+
 // Notifications Log
 let notifications = [
   {
@@ -711,5 +790,149 @@ export const store = {
       peakHour: '10:00 AM – 11:00 AM',
       hourlyTraffic
     };
+  },
+
+  // Patient File & Medical Record Methods
+  getPatientFile: (patientId) => {
+    let pf = patientFiles.find(p => p.patient_id === patientId);
+    const userObj = users.find(u => u.id === patientId) || { full_name: 'Patient User', phone: '+91 9876543210' };
+
+    if (!pf) {
+      pf = {
+        id: `pf-${Date.now()}`,
+        patient_id: patientId,
+        patient_code: `MED${1024 + Math.floor(Math.random() * 800)}`,
+        age: 28,
+        gender: 'Male',
+        blood_group: 'O+',
+        allergies: 'None known',
+        chronic_conditions: 'None',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      patientFiles.push(pf);
+    }
+
+    return {
+      ...pf,
+      full_name: userObj.full_name,
+      phone: userObj.phone,
+      email: userObj.email
+    };
+  },
+
+  getConsultationsByPatient: (patientId) => {
+    return consultations
+      .filter(c => c.patient_id === patientId)
+      .sort((a, b) => new Date(b.visit_date) - new Date(a.visit_date));
+  },
+
+  getConsultationById: (consultationId) => {
+    return consultations.find(c => c.id === consultationId) || null;
+  },
+
+  createConsultation: (consultationData, user = null) => {
+    const {
+      patient_id, doctor_id, doctor_name, queue_token_id, token_number,
+      department_id, department_name, hospital_id, hospital_name,
+      chief_complaint, symptoms, observations, diagnosis,
+      treatment_advice, prescription_notes, follow_up_instructions, additional_remarks
+    } = consultationData;
+
+    const newConsultation = {
+      id: `cons-${Date.now()}`,
+      patient_id,
+      doctor_id: doctor_id || user?.id || 'doc-user-1',
+      doctor_name: doctor_name || user?.full_name || 'Dr. Rajesh Sharma',
+      queue_token_id: queue_token_id || null,
+      token_number: token_number || '101',
+      department_id: department_id || 'dept-1',
+      department_name: department_name || 'Cardiology',
+      hospital_id: hospital_id || 'hosp-1',
+      hospital_name: hospital_name || 'City Care Super Specialty Hospital',
+      chief_complaint: chief_complaint || '',
+      symptoms: symptoms || '',
+      observations: observations || '',
+      diagnosis: diagnosis || 'General OPD Evaluation',
+      treatment_advice: treatment_advice || '',
+      prescription_notes: prescription_notes || '',
+      follow_up_instructions: follow_up_instructions || '',
+      additional_remarks: additional_remarks || '',
+      visit_date: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    consultations.unshift(newConsultation);
+
+    // Record Audit Trail
+    consultationAuditLogs.unshift({
+      id: `c-audit-${Date.now()}`,
+      consultation_id: newConsultation.id,
+      doctor_id: newConsultation.doctor_id,
+      doctor_name: newConsultation.doctor_name,
+      patient_id: newConsultation.patient_id,
+      action: 'CONSULTATION_CREATED',
+      timestamp: new Date().toISOString()
+    });
+
+    logAudit({
+      user,
+      action: 'SAVE_DOCTOR_REMARKS',
+      tokenId: queue_token_id,
+      tokenNumber: token_number,
+      previousStatus: 'in_consultation',
+      newStatus: 'completed',
+      details: `Dr. ${newConsultation.doctor_name} saved consultation remarks for patient ${patient_id}`
+    });
+
+    // Optionally complete token if linked
+    if (queue_token_id) {
+      store.updateTokenStatus(queue_token_id, 'completed', user);
+    }
+
+    return newConsultation;
+  },
+
+  updateConsultation: (consultationId, updateData, user = null) => {
+    const consultation = consultations.find(c => c.id === consultationId);
+    if (!consultation) return { error: 'Consultation record not found' };
+
+    Object.assign(consultation, updateData, { updated_at: new Date().toISOString() });
+
+    consultationAuditLogs.unshift({
+      id: `c-audit-${Date.now()}`,
+      consultation_id: consultationId,
+      doctor_id: user?.id || consultation.doctor_id,
+      doctor_name: user?.full_name || consultation.doctor_name,
+      patient_id: consultation.patient_id,
+      action: 'CONSULTATION_UPDATED',
+      timestamp: new Date().toISOString()
+    });
+
+    return { success: true, consultation };
+  },
+
+  searchPatients: (query) => {
+    if (!query) return [];
+    const q = query.toLowerCase().trim();
+
+    // Match by Patient Code (e.g. MED1024), Token #, Name, or Phone
+    const matchedFiles = patientFiles.filter(pf => pf.patient_code.toLowerCase().includes(q));
+    const matchedUsers = users.filter(u => u.role === 'patient' && (
+      u.full_name.toLowerCase().includes(q) ||
+      u.phone.includes(q) ||
+      u.email.toLowerCase().includes(q)
+    ));
+
+    const matchedTokens = tokens.filter(t => t.token_number === q || t.ref_id.toLowerCase().includes(q));
+
+    const patientIds = new Set([
+      ...matchedFiles.map(f => f.patient_id),
+      ...matchedUsers.map(u => u.id),
+      ...matchedTokens.map(t => t.patient_id)
+    ]);
+
+    return Array.from(patientIds).map(id => store.getPatientFile(id));
   }
 };

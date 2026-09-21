@@ -15,6 +15,7 @@ import HospitalSearch from './pages/HospitalSearch';
 import HospitalDetail from './pages/HospitalDetail';
 import PatientDashboard from './pages/PatientDashboard';
 import PatientHistory from './pages/PatientHistory';
+import PatientFileRemarks from './pages/PatientFileRemarks';
 import ReceptionistDashboard from './pages/ReceptionistDashboard';
 import DoctorDashboard from './pages/DoctorDashboard';
 import AdminDashboard from './pages/AdminDashboard';
@@ -40,7 +41,7 @@ export default function App() {
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/signup" element={<SignupPage />} />
 
-                    {/* Protected Patient Routes */}
+                    {/* Protected Patient & File Routes */}
                     <Route
                       path="/dashboard"
                       element={
@@ -54,6 +55,14 @@ export default function App() {
                       element={
                         <ProtectedRoute allowedRoles={['patient', 'admin']}>
                           <PatientHistory />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/patient-file/:patientId"
+                      element={
+                        <ProtectedRoute allowedRoles={['patient', 'doctor', 'admin']}>
+                          <PatientFileRemarks />
                         </ProtectedRoute>
                       }
                     />

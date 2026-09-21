@@ -12,7 +12,8 @@ import {
   AlertCircle, 
   Ticket,
   ChevronRight,
-  Stethoscope
+  Stethoscope,
+  FileText
 } from 'lucide-react';
 
 export default function PatientHistory() {
@@ -136,14 +137,23 @@ export default function PatientHistory() {
                 </div>
               </div>
 
-              {/* Action Button */}
-              <button
-                onClick={() => handleTrackToken(token.id)}
-                className="w-full sm:w-auto px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 hover:bg-[#C81E3A] hover:text-white text-xs font-semibold transition-colors flex items-center justify-center gap-1 shrink-0"
-              >
-                <span>Track / View</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto shrink-0">
+                <Link
+                  to={`/patient-file/${user?.id || 'user-1'}`}
+                  className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-200 text-xs font-semibold transition-colors flex items-center justify-center gap-1"
+                >
+                  <FileText className="w-3.5 h-3.5 text-primary-600" /> Medical File &amp; Remarks
+                </Link>
+
+                <button
+                  onClick={() => handleTrackToken(token.id)}
+                  className="w-full sm:w-auto px-4 py-2 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-xs font-semibold transition-colors flex items-center justify-center gap-1"
+                >
+                  <span>Track</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
 
             </div>
           ))}

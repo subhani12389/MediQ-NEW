@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Stethoscope, Play, CheckCircle2, UserX, Clock, AlertTriangle, Coffee, ShieldAlert, Sparkles } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Stethoscope, Play, CheckCircle2, UserX, Clock, AlertTriangle, Coffee, ShieldAlert, Sparkles, FileText, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useQueue } from '../context/QueueContext';
 
@@ -134,19 +135,26 @@ export default function DoctorDashboard() {
                 )}
 
                 {/* Consultation Control Actions */}
-                <div className="flex items-center gap-3 pt-2">
+                <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                  <Link
+                    to={`/patient-file/${activeInConsultation.patient_id || 'user-1'}?tokenId=${activeInConsultation.id}`}
+                    className="w-full sm:w-auto py-3 px-4 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-primary-600/20 transition-all"
+                  >
+                    <FileText className="w-5 h-5" /> Open Patient File &amp; Remarks
+                  </Link>
+
                   <button
                     onClick={() => handleCompleteConsultation(activeInConsultation.id)}
                     disabled={loadingAction}
-                    className="flex-1 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all"
+                    className="w-full sm:w-auto py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all"
                   >
-                    <CheckCircle2 className="w-5 h-5" /> Complete Consultation
+                    <CheckCircle2 className="w-5 h-5" /> Complete
                   </button>
 
                   <button
                     onClick={() => handleSkip(activeInConsultation.id)}
                     disabled={loadingAction}
-                    className="py-3 px-4 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm transition-all"
+                    className="w-full sm:w-auto py-3 px-4 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm transition-all"
                   >
                     Mark No-Show
                   </button>
@@ -271,12 +279,21 @@ export default function DoctorDashboard() {
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => handleStartConsultation(token.id)}
-                    className="px-3 py-1.5 rounded-lg bg-primary-600 hover:bg-primary-700 text-white font-semibold text-xs transition-colors flex items-center gap-1"
-                  >
-                    <Play className="w-3.5 h-3.5" /> Call In
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to={`/patient-file/${token.patient_id || 'user-1'}?tokenId=${token.id}`}
+                      className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-semibold text-xs transition-colors flex items-center gap-1"
+                    >
+                      <FileText className="w-3.5 h-3.5 text-primary-500" /> File &amp; Remarks
+                    </Link>
+
+                    <button
+                      onClick={() => handleStartConsultation(token.id)}
+                      className="px-3 py-1.5 rounded-lg bg-primary-600 hover:bg-primary-700 text-white font-semibold text-xs transition-colors flex items-center gap-1"
+                    >
+                      <Play className="w-3.5 h-3.5" /> Call In
+                    </button>
+                  </div>
                 </div>
               ))
             ) : (
