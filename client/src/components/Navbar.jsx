@@ -65,7 +65,7 @@ export default function Navbar() {
             <span className="font-heading font-extrabold text-xl tracking-tight text-white dark:text-white leading-none">
               Medi<span className="text-amber-300 dark:text-primary-400">Q</span>
             </span>
-            <span className="text-[10px] text-red-100 dark:text-slate-400 font-bold tracking-widest uppercase">
+            <span className="text-[10px] text-white/90 dark:text-slate-400 font-extrabold tracking-widest uppercase">
               Smart OPD Platform
             </span>
           </div>

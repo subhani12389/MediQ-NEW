@@ -96,7 +96,7 @@ export default function PatientDashboard() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowQRModal(true)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 transition-colors"
               >
                 <QrCode className="w-4 h-4" /> QR Pass
               </button>
@@ -179,10 +179,10 @@ export default function PatientDashboard() {
                 <button
                   onClick={() => handleIntent('on_my_way')}
                   disabled={intentLoading || activeToken.intent_status === 'on_my_way'}
-                  className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+                  className={`flex-1 py-3 px-4 rounded-xl font-extrabold text-sm flex items-center justify-center gap-2 transition-all ${
                     activeToken.intent_status === 'on_my_way'
                       ? 'bg-emerald-600 text-white shadow-md'
-                      : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
+                      : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
                   }`}
                 >
                   <Navigation className="w-4 h-4" /> I'm On My Way
@@ -191,9 +191,9 @@ export default function PatientDashboard() {
                 <button
                   onClick={() => handleIntent('cant_come')}
                   disabled={intentLoading}
-                  className="py-3 px-4 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-950/40 dark:hover:bg-red-950/80 font-semibold text-xs border border-red-200 dark:border-red-900/40 transition-all flex items-center justify-center gap-1.5"
+                  className="py-3 px-4 rounded-xl bg-red-100 hover:bg-red-200 text-red-900 dark:bg-red-950/60 dark:hover:bg-red-950/80 font-bold text-xs border border-red-300 dark:border-red-900/60 transition-all flex items-center justify-center gap-1.5"
                 >
-                  <XCircle className="w-4 h-4" /> I Can't Come
+                  <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" /> I Can't Come
                 </button>
               </div>
             </div>

@@ -128,17 +128,17 @@ export default function ReceptionistDashboard() {
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => setShowQRScanModal(true)}
-              className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs flex items-center gap-1.5 transition-colors"
+              className="px-3.5 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold border border-slate-300 dark:border-slate-700 text-xs flex items-center gap-1.5 transition-colors"
             >
               <QrCode className="w-4 h-4" /> Scan QR Ref
             </button>
 
             <button
               onClick={() => setShowPauseModal(true)}
-              className={`px-3.5 py-2 rounded-xl font-semibold text-xs flex items-center gap-1.5 transition-colors ${
+              className={`px-3.5 py-2 rounded-xl font-bold border text-xs flex items-center gap-1.5 transition-colors ${
                 isDeptPaused
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 hover:bg-amber-200'
+                  ? 'bg-emerald-600 text-white border-emerald-700'
+                  : 'bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border-amber-300 dark:border-amber-800 hover:bg-amber-200'
               }`}
             >
               {isDeptPaused ? <PlayCircle className="w-4 h-4" /> : <PauseCircle className="w-4 h-4" />}
@@ -234,7 +234,7 @@ export default function ReceptionistDashboard() {
               <select
                 value={selectedDept}
                 onChange={(e) => setSelectedDept(e.target.value)}
-                className="bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 rounded-xl px-3 py-2 focus:outline-none"
+                className="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-slate-200 rounded-xl px-3 py-2 focus:outline-none"
               >
                 <option value="all">All Departments</option>
                 <option value="dept-1">Cardiology</option>
@@ -246,7 +246,7 @@ export default function ReceptionistDashboard() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 rounded-xl px-3 py-2 focus:outline-none"
+                className="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-slate-200 rounded-xl px-3 py-2 focus:outline-none"
               >
                 <option value="all">All Statuses</option>
                 <option value="waiting">Waiting</option>

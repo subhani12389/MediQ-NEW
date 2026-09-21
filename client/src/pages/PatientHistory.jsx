@@ -141,7 +141,7 @@ export default function PatientHistory() {
               <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto shrink-0">
                 <Link
                   to={`/patient-file/${user?.id || 'user-1'}`}
-                  className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-200 text-xs font-semibold transition-colors flex items-center justify-center gap-1"
+                  className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-100 hover:bg-slate-300 text-xs font-bold border border-slate-300 dark:border-slate-600 transition-colors flex items-center justify-center gap-1"
                 >
                   <FileText className="w-3.5 h-3.5 text-primary-600" /> Medical File &amp; Remarks
                 </Link>

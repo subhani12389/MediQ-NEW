@@ -61,23 +61,23 @@ export default function DoctorDashboard() {
           </div>
 
           {/* Availability Status Selector */}
-          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl text-xs font-semibold">
-            <span className="text-slate-500 dark:text-slate-400 px-2">OPD Status:</span>
+          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold">
+            <span className="text-slate-700 dark:text-slate-300 px-2 font-bold">OPD Status:</span>
             <button
               onClick={() => handleStatusToggle('AVAILABLE')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${doctorStatus === 'AVAILABLE' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+              className={`px-3 py-1.5 rounded-lg transition-all ${doctorStatus === 'AVAILABLE' ? 'bg-emerald-600 text-white shadow-sm font-bold' : 'text-slate-800 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold'}`}
             >
               Available
             </button>
             <button
               onClick={() => handleStatusToggle('ON_BREAK')}
-              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${doctorStatus === 'ON_BREAK' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${doctorStatus === 'ON_BREAK' ? 'bg-amber-600 text-white shadow-sm font-bold' : 'text-slate-800 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold'}`}
             >
               <Coffee className="w-3.5 h-3.5" /> On Break
             </button>
             <button
               onClick={() => handleStatusToggle('UNAVAILABLE')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${doctorStatus === 'UNAVAILABLE' ? 'bg-red-600 text-white shadow-sm' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+              className={`px-3 py-1.5 rounded-lg transition-all ${doctorStatus === 'UNAVAILABLE' ? 'bg-red-600 text-white shadow-sm font-bold' : 'text-slate-800 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold'}`}
             >
               Unavailable
             </button>
@@ -154,7 +154,7 @@ export default function DoctorDashboard() {
                   <button
                     onClick={() => handleSkip(activeInConsultation.id)}
                     disabled={loadingAction}
-                    className="w-full sm:w-auto py-3 px-4 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm transition-all"
+                    className="w-full sm:w-auto py-3 px-4 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold border border-slate-300 dark:border-slate-700 text-sm transition-all"
                   >
                     Mark No-Show
                   </button>
@@ -282,9 +282,9 @@ export default function DoctorDashboard() {
                   <div className="flex items-center gap-2">
                     <Link
                       to={`/patient-file/${token.patient_id || 'user-1'}?tokenId=${token.id}`}
-                      className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-semibold text-xs transition-colors flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold border border-slate-300 dark:border-slate-700 text-xs transition-colors flex items-center gap-1"
                     >
-                      <FileText className="w-3.5 h-3.5 text-primary-500" /> File &amp; Remarks
+                      <FileText className="w-3.5 h-3.5 text-primary-600" /> File &amp; Remarks
                     </Link>
 
                     <button
