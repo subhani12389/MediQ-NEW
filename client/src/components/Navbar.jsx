@@ -17,61 +17,89 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
+    <nav className="sticky top-0 z-50 bg-[#C81E3A] dark:bg-slate-900/95 backdrop-blur-md border-b border-[#A0182E] dark:border-slate-800 text-white dark:text-slate-100 shadow-md shadow-red-900/10 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         
         {/* Brand Logo */}
-        <Link to="/" className="flex items-center gap-2 group">
-          <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center text-white shadow-md shadow-primary-600/20 group-hover:scale-105 transition-transform">
+        <Link to="/" className="flex items-center gap-2.5 group">
+          <div className="w-10 h-10 rounded-xl bg-white text-[#C81E3A] dark:bg-primary-600 dark:text-white flex items-center justify-center font-bold shadow-md group-hover:scale-105 transition-transform">
             <Activity className="w-6 h-6 stroke-[2.5]" />
           </div>
           <div className="flex flex-col">
-            <span className="font-heading font-bold text-xl tracking-tight text-slate-900 dark:text-white leading-none">
-              Medi<span className="text-primary-600">Q</span>
+            <span className="font-heading font-extrabold text-xl tracking-tight text-white dark:text-white leading-none">
+              Medi<span className="text-red-200 dark:text-primary-400">Q</span>
             </span>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-wider uppercase">
+            <span className="text-[10px] text-red-100 dark:text-slate-400 font-medium tracking-wider uppercase">
               Smart OPD Platform
             </span>
           </div>
         </Link>
 
         {/* Center Nav Links */}
-        <div className="hidden md:flex items-center gap-6">
-          <Link to="/hospitals" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+        <div className="hidden md:flex items-center gap-2">
+          <Link
+            to="/hospitals"
+            className="text-xs font-semibold text-white/90 hover:text-white hover:bg-white/10 dark:text-slate-300 dark:hover:text-primary-400 dark:hover:bg-slate-800 px-3 py-1.5 rounded-lg transition-colors"
+          >
             {t('findHospitals')}
           </Link>
+
           {isAuthenticated && (
             <>
               {user.role === 'patient' && (
                 <>
-                  <Link to="/dashboard" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                  <Link
+                    to="/dashboard"
+                    className="text-xs font-semibold text-white/90 hover:text-white hover:bg-white/10 dark:text-slate-300 dark:hover:text-primary-400 dark:hover:bg-slate-800 px-3 py-1.5 rounded-lg transition-colors"
+                  >
                     {t('liveQueue')}
                   </Link>
-                  <Link to="/history" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                  <Link
+                    to="/history"
+                    className="text-xs font-semibold text-white/90 hover:text-white hover:bg-white/10 dark:text-slate-300 dark:hover:text-primary-400 dark:hover:bg-slate-800 px-3 py-1.5 rounded-lg transition-colors"
+                  >
                     {t('myTokens')}
                   </Link>
                 </>
               )}
+
               {user.role === 'receptionist' && (
-                <Link to="/receptionist" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                <Link
+                  to="/receptionist"
+                  className="text-xs font-semibold text-white/90 hover:text-white hover:bg-white/10 dark:text-slate-300 dark:hover:text-primary-400 dark:hover:bg-slate-800 px-3 py-1.5 rounded-lg transition-colors"
+                >
                   Reception Desk
                 </Link>
               )}
+
               {user.role === 'doctor' && (
-                <Link to="/doctor" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
-                  <Stethoscope className="w-4 h-4" /> Doctor OPD Desk
+                <Link
+                  to="/doctor"
+                  className="text-xs font-bold text-white bg-white/15 hover:bg-white/20 dark:bg-emerald-950/60 dark:text-emerald-400 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                >
+                  <Stethoscope className="w-3.5 h-3.5" /> Doctor OPD Desk
                 </Link>
               )}
+
               {user.role === 'admin' && (
                 <>
-                  <Link to="/receptionist" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                  <Link
+                    to="/receptionist"
+                    className="text-xs font-semibold text-white/90 hover:text-white hover:bg-white/10 dark:text-slate-300 dark:hover:bg-slate-800 px-3 py-1.5 rounded-lg transition-colors"
+                  >
                     Reception Portal
                   </Link>
-                  <Link to="/doctor" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                  <Link
+                    to="/doctor"
+                    className="text-xs font-semibold text-white/90 hover:text-white hover:bg-white/10 dark:text-slate-300 dark:hover:bg-slate-800 px-3 py-1.5 rounded-lg transition-colors"
+                  >
                     Doctor Portal
                   </Link>
-                  <Link to="/admin" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors flex items-center gap-1">
-                    <Shield className="w-4 h-4 text-amber-500" /> Admin
+                  <Link
+                    to="/admin"
+                    className="text-xs font-bold text-amber-200 hover:text-amber-100 hover:bg-white/10 dark:text-amber-400 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                  >
+                    <Shield className="w-3.5 h-3.5" /> Admin
                   </Link>
                 </>
               )}
@@ -83,12 +111,12 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           
           {/* Language Picker */}
-          <div className="relative flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-1 text-xs">
-            <Globe className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 ml-1.5 mr-1" />
+          <div className="relative flex items-center bg-white/15 dark:bg-slate-800 rounded-lg p-1 text-xs border border-white/20 dark:border-slate-700">
+            <Globe className="w-3.5 h-3.5 text-white/80 dark:text-slate-400 ml-1.5 mr-1" />
             <select
               value={currentLanguage}
               onChange={(e) => changeLanguage(e.target.value)}
-              className="bg-transparent text-slate-700 dark:text-slate-300 font-medium focus:outline-none pr-1 cursor-pointer"
+              className="bg-transparent text-white dark:text-slate-300 font-semibold focus:outline-none pr-1 cursor-pointer [&>option]:text-slate-900"
             >
               <option value="en">EN</option>
               <option value="hi">HI (हिंदी)</option>
@@ -99,27 +127,27 @@ export default function Navbar() {
           {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-lg text-white/90 hover:bg-white/15 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
             title="Toggle theme"
           >
-            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-white" />}
           </button>
 
           {/* User Auth Info / Buttons */}
           {isAuthenticated ? (
-            <div className="flex items-center gap-3 pl-2 border-l border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-3 pl-2 border-l border-white/20 dark:border-slate-800">
               <div className="hidden sm:flex flex-col text-right">
-                <span className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">
+                <span className="text-xs font-bold text-white dark:text-white leading-tight">
                   {user.full_name}
                 </span>
-                <span className="text-[10px] capitalize text-primary-600 dark:text-primary-400 font-medium">
+                <span className="text-[10px] capitalize text-red-100 dark:text-primary-400 font-medium">
                   {user.role}
                 </span>
               </div>
 
               <button
                 onClick={handleLogout}
-                className="p-2 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                className="p-2 rounded-lg text-white/90 hover:text-white hover:bg-white/15 dark:text-slate-400 dark:hover:text-red-400 transition-colors"
                 title="Sign Out"
               >
                 <LogOut className="w-4 h-4" />
@@ -129,13 +157,13 @@ export default function Navbar() {
             <div className="flex items-center gap-2">
               <Link
                 to="/login"
-                className="text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-primary-600 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="text-xs font-semibold text-white/90 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-colors"
               >
                 Sign In
               </Link>
               <Link
                 to="/signup"
-                className="text-xs font-semibold bg-primary-600 hover:bg-primary-700 text-white px-3.5 py-2 rounded-lg shadow-sm shadow-primary-600/20 transition-all"
+                className="text-xs font-bold bg-white text-[#C81E3A] hover:bg-red-50 dark:bg-primary-600 dark:text-white dark:hover:bg-primary-700 px-3.5 py-2 rounded-lg shadow-sm transition-all"
               >
                 Get Started
               </Link>
