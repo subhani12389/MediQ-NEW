@@ -27,42 +27,42 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-12 lg:pt-20 pb-12">
         {/* Soft background glows */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-red-500/10 dark:bg-red-500/5 blur-3xl rounded-full pointer-events-none"></div>
-        <div className="absolute bottom-0 right-10 w-80 h-80 bg-teal-500/10 dark:bg-teal-500/5 blur-3xl rounded-full pointer-events-none"></div>
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-red-500/10 dark:bg-red-500/5 blur-3xl rounded-full pointer-events-none"></div>
+        <div className="absolute bottom-0 right-10 w-96 h-96 bg-emerald-500/10 dark:bg-emerald-500/5 blur-3xl rounded-full pointer-events-none"></div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             
             {/* Left Hero Content */}
             <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800 text-[#C81E3A] text-xs font-bold uppercase tracking-wider">
-                <Sparkles className="w-4 h-4 animate-spin" />
-                <span>Smart Hospital OPD Queue Management</span>
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-50 dark:bg-red-950/80 border border-red-200 dark:border-red-800 text-[#C81E3A] text-xs font-extrabold uppercase tracking-wider shadow-sm">
+                <Sparkles className="w-4 h-4 text-emerald-500 animate-spin" />
+                <span>Smart Hospital OPD &amp; Token Management</span>
               </div>
 
-              <h1 className="font-heading font-extrabold text-4xl sm:text-5xl lg:text-6xl text-slate-900 dark:text-white leading-[1.1]">
+              <h1 className="font-heading font-black text-4xl sm:text-5xl lg:text-6xl text-slate-900 dark:text-white leading-[1.1] tracking-tight">
                 Skip the <span className="text-[#C81E3A]">queue</span>, <br className="hidden sm:inline" />
-                not the <span className="text-teal-600 dark:text-teal-400">care</span>.
+                not the <span className="text-emerald-600 dark:text-emerald-400">care</span>.
               </h1>
 
-              <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
-                Generate a digital OPD token from home, track your queue position in real time with Supabase live sync, and arrive at the hospital right when your turn is 10 minutes away.
+              <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed font-medium">
+                Generate a digital OPD token from home, track your live queue position with Supabase real-time sync, and arrive at the hospital right when your turn is 10 minutes away.
               </p>
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
                 <Link
                   to="/hospitals"
-                  className="w-full sm:w-auto px-7 py-3.5 rounded-2xl brand-gradient text-white font-semibold text-base shadow-xl shadow-red-900/25 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 group"
+                  className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-base shadow-xl shadow-emerald-500/25 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 group"
                 >
                   <Search className="w-5 h-5" />
-                  <span>Find Hospital & Get Token</span>
+                  <span>Find Hospital &amp; Book Token</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
 
                 <Link
                   to="/dashboard"
-                  className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 font-semibold text-base shadow-md hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-extrabold text-base shadow-md hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2"
                 >
                   <Ticket className="w-5 h-5 text-[#C81E3A]" />
                   <span>Track Active Token</span>
@@ -70,18 +70,18 @@ export default function LandingPage() {
               </div>
 
               {/* Trust Badges */}
-              <div className="pt-6 border-t border-slate-200/80 dark:border-slate-800/80 grid grid-cols-3 gap-4 text-center lg:text-left">
-                <div>
-                  <div className="font-heading font-extrabold text-xl text-slate-900 dark:text-white">85%</div>
-                  <div className="text-xs text-slate-500">Less OPD Wait Time</div>
+              <div className="pt-8 border-t border-slate-200/80 dark:border-slate-800/80 grid grid-cols-3 gap-6 text-center lg:text-left">
+                <div className="bg-white/60 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 backdrop-blur-sm">
+                  <div className="font-heading font-black text-2xl text-slate-900 dark:text-white">85%</div>
+                  <div className="text-xs text-slate-500 font-semibold">Less OPD Wait Time</div>
                 </div>
-                <div>
-                  <div className="font-heading font-extrabold text-xl text-[#C81E3A]">Realtime</div>
-                  <div className="text-xs text-slate-500">Live Supabase Sync</div>
+                <div className="bg-white/60 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 backdrop-blur-sm">
+                  <div className="font-heading font-black text-2xl text-[#C81E3A]">Realtime</div>
+                  <div className="text-xs text-slate-500 font-semibold">Live Supabase Sync</div>
                 </div>
-                <div>
-                  <div className="font-heading font-extrabold text-xl text-teal-600 dark:text-teal-400">Zero</div>
-                  <div className="text-xs text-slate-500">Crowded Waiting Rooms</div>
+                <div className="bg-white/60 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 backdrop-blur-sm">
+                  <div className="font-heading font-black text-2xl text-emerald-600 dark:text-emerald-400">Zero</div>
+                  <div className="text-xs text-slate-500 font-semibold">Crowded Waiting Rooms</div>
                 </div>
               </div>
 
@@ -89,53 +89,53 @@ export default function LandingPage() {
 
             {/* Right Hero Visual Card — Interactive Token Widget Preview */}
             <div className="lg:col-span-5 flex justify-center">
-              <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-6 relative overflow-hidden">
+              <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-6 relative overflow-hidden card-hover">
                 
                 {/* Decorative Pill Header */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded-full bg-emerald-500 animate-ping"></span>
-                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                    <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                       Live Queue Monitor
                     </span>
                   </div>
-                  <span className="text-xs font-mono bg-slate-100 dark:bg-slate-700 px-2.5 py-1 rounded-full text-slate-600 dark:text-slate-300">
+                  <span className="text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full text-slate-700 dark:text-slate-300">
                     City Care Hospital
                   </span>
                 </div>
 
                 {/* Animated Token Counter Circle */}
-                <div className="relative flex flex-col items-center justify-center py-6 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
-                  <div className="relative w-36 h-36 rounded-full border-4 border-red-500/30 flex flex-col items-center justify-center animate-pulse-ring bg-white dark:bg-slate-800 shadow-inner">
-                    <span className="text-xs text-slate-400 font-medium">Your Token</span>
+                <div className="relative flex flex-col items-center justify-center py-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                  <div className="relative w-36 h-36 rounded-full border-4 border-emerald-500/40 flex flex-col items-center justify-center bg-white dark:bg-slate-900 shadow-xl">
+                    <span className="text-[10px] text-slate-400 uppercase font-extrabold tracking-wider">Your Token</span>
                     <span className="font-heading font-black text-4xl text-[#C81E3A] tracking-wider">
                       {activeToken ? activeToken.token_number : 'A-103'}
                     </span>
-                    <span className="text-[10px] text-teal-600 font-bold uppercase mt-0.5">Cardiology</span>
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold uppercase mt-0.5">Cardiology</span>
                   </div>
                 </div>
 
                 {/* Live Stats Row */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 text-center">
-                    <div className="text-xs text-slate-400">Current Serving</div>
-                    <div className="font-heading font-extrabold text-lg text-slate-900 dark:text-white">
+                  <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-800 text-center">
+                    <div className="text-[11px] text-slate-500 font-semibold">Current Serving</div>
+                    <div className="font-heading font-black text-xl text-slate-900 dark:text-white mt-0.5">
                       {activeToken ? activeToken.current_serving_token : 'A-102'}
                     </div>
                   </div>
-                  <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 text-center">
-                    <div className="text-xs text-slate-400">People Ahead</div>
-                    <div className="font-heading font-extrabold text-lg text-teal-600 dark:text-teal-400">
+                  <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-800 text-center">
+                    <div className="text-[11px] text-slate-500 font-semibold">People Ahead</div>
+                    <div className="font-heading font-black text-xl text-emerald-600 dark:text-emerald-400 mt-0.5">
                       {activeToken ? activeToken.people_ahead : '1 Person'}
                     </div>
                   </div>
                 </div>
 
                 {/* Smart Leave Banner Preview */}
-                <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 flex items-center gap-3 text-xs text-amber-800 dark:text-amber-300">
+                <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/80 flex items-center gap-3 text-xs text-amber-900 dark:text-amber-300 font-semibold shadow-sm">
                   <Navigation className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 animate-bounce" />
                   <div>
-                    <span className="font-bold block">"Leave Now" Smart Alert</span>
+                    <span className="font-extrabold block">"Leave Now" Smart Alert</span>
                     <span>Est. Wait: 12 min — Time to head to hospital!</span>
                   </div>
                 </div>
@@ -160,51 +160,51 @@ export default function LandingPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           
-          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm relative space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-950/60 text-[#C81E3A] flex items-center justify-center font-bold font-heading">
+          <div className="bg-white dark:bg-slate-900 p-6 sm:p-7 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm card-hover space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-red-100 dark:bg-red-950/60 text-[#C81E3A] flex items-center justify-center font-black font-heading text-lg">
               01
             </div>
-            <h3 className="font-heading font-bold text-base text-slate-900 dark:text-white">
-              Search & Select
+            <h3 className="font-heading font-extrabold text-lg text-slate-900 dark:text-white">
+              Search &amp; Select
             </h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Find hospitals by location or specialty (Cardiology, Orthopedics, Pediatrics, etc.) and check live queue length.
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+              Find partner hospitals by city or specialty (Cardiology, Orthopedics, Pediatrics, etc.) and view live queue length.
             </p>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm relative space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-teal-100 dark:bg-teal-950/60 text-teal-600 flex items-center justify-center font-bold font-heading">
+          <div className="bg-white dark:bg-slate-900 p-6 sm:p-7 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm card-hover space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-teal-100 dark:bg-teal-950/60 text-teal-600 flex items-center justify-center font-black font-heading text-lg">
               02
             </div>
-            <h3 className="font-heading font-bold text-base text-slate-900 dark:text-white">
+            <h3 className="font-heading font-extrabold text-lg text-slate-900 dark:text-white">
               Generate Digital Token
             </h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Get an instant digital OPD token from home without standing in physical lines or registering at counters.
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+              Get an instant digital OPD token from home without standing in physical lines or crowded registration desks.
             </p>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm relative space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 flex items-center justify-center font-bold font-heading">
+          <div className="bg-white dark:bg-slate-900 p-6 sm:p-7 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm card-hover space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 flex items-center justify-center font-black font-heading text-lg">
               03
             </div>
-            <h3 className="font-heading font-bold text-base text-slate-900 dark:text-white">
+            <h3 className="font-heading font-extrabold text-lg text-slate-900 dark:text-white">
               Track Live Wait Timer
             </h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
               Watch current serving tokens move forward in real time. Get smart alerts when your turn is 10–15 mins away.
             </p>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm relative space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center font-bold font-heading">
+          <div className="bg-white dark:bg-slate-900 p-6 sm:p-7 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm card-hover space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center font-black font-heading text-lg">
               04
             </div>
-            <h3 className="font-heading font-bold text-base text-slate-900 dark:text-white">
+            <h3 className="font-heading font-extrabold text-lg text-slate-900 dark:text-white">
               Direct Consultation
             </h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Arrive right on time, show your QR token pass to security/reception, and walk straight into the doctor's room.
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+              Arrive right on time, show your QR token pass to OPD desk, and walk straight into the doctor's consultation room.
             </p>
           </div>
 

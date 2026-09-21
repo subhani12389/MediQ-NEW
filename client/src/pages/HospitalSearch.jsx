@@ -160,21 +160,21 @@ export default function HospitalSearch() {
           {filteredHospitals.map(hospital => (
             <div
               key={hospital.id}
-              className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group"
+              className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm card-hover flex flex-col justify-between group"
             >
               
               {/* Top Banner Image & Rating */}
-              <div className="relative h-44 overflow-hidden bg-slate-100 dark:bg-slate-900">
+              <div className="relative h-44 overflow-hidden bg-slate-100 dark:bg-slate-950">
                 <img
                   src={hospital.image}
                   alt={hospital.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                <div className="absolute top-3 right-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-2.5 py-1 rounded-full text-xs font-bold text-slate-800 dark:text-white shadow-md flex items-center gap-1">
+                <div className="absolute top-3 right-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-3 py-1 rounded-full text-xs font-black text-slate-800 dark:text-white shadow-md flex items-center gap-1">
                   <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                   <span>{hospital.rating || 4.8}</span>
                 </div>
-                <div className="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                <div className="absolute bottom-3 left-3 bg-slate-900/85 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-md">
                   <MapPin className="w-3.5 h-3.5 text-[#C81E3A]" />
                   <span>{hospital.location}, {hospital.city}</span>
                 </div>
@@ -183,10 +183,10 @@ export default function HospitalSearch() {
               {/* Hospital Information Body */}
               <div className="p-6 space-y-4 flex-1 flex flex-col justify-between">
                 <div>
-                  <h3 className="font-heading font-extrabold text-xl text-slate-900 dark:text-white group-hover:text-[#C81E3A] transition-colors">
+                  <h3 className="font-heading font-extrabold text-xl text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                     {hospital.name}
                   </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 font-medium">
                     {hospital.address}
                   </p>
                 </div>
@@ -196,7 +196,7 @@ export default function HospitalSearch() {
                   {hospital.specialties.map((spec, i) => (
                     <span
                       key={i}
-                      className="px-2.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 text-[11px] font-medium"
+                      className="px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-[11px] font-bold"
                     >
                       {spec}
                     </span>
@@ -204,13 +204,13 @@ export default function HospitalSearch() {
                 </div>
 
                 {/* Metrics Footer */}
-                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100 dark:border-slate-700 text-xs">
-                  <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs font-semibold">
+                  <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
                     <Clock className="w-4 h-4 text-amber-500" />
                     <span>Avg Wait: ~{hospital.avg_consultation_minutes} min/patient</span>
                   </div>
-                  <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
-                    <Phone className="w-4 h-4 text-teal-500" />
+                  <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                    <Phone className="w-4 h-4 text-emerald-500" />
                     <span>{hospital.phone || 'Emergency Ready'}</span>
                   </div>
                 </div>
@@ -218,9 +218,9 @@ export default function HospitalSearch() {
                 {/* Select & Generate Token Button */}
                 <Link
                   to={`/hospitals/${hospital.id}`}
-                  className="mt-2 w-full py-3 rounded-2xl brand-gradient text-white font-semibold text-sm shadow-md shadow-red-900/20 hover:opacity-95 transition-opacity flex items-center justify-center gap-2 group-hover:translate-x-0.5"
+                  className="mt-2 w-full py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-sm shadow-md shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 group-hover:translate-x-0.5"
                 >
-                  <span>View Departments & Book Token</span>
+                  <span>View Departments &amp; Book Token</span>
                   <ChevronRight className="w-4 h-4" />
                 </Link>
               </div>
