@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
-export const demoAccounts = {
+export const DEMO_ACCOUNTS = {
   patient: {
     id: 'user-1',
     full_name: 'Rahul Sharma',
@@ -17,9 +17,17 @@ export const demoAccounts = {
     phone: '+91 9811223344',
     role: 'receptionist',
     hospital_id: 'hosp-1',
-    hospital_name: 'City Care Super Specialty Hospital',
-    department_id: 'dept-1',
-    department_name: 'Cardiology'
+    department_id: 'dept-1'
+  },
+  doctor: {
+    id: 'doc-user-1',
+    doctor_id: 'doc-1',
+    full_name: 'Dr. Rajesh Sharma',
+    email: 'doctor@cityhospital.com',
+    phone: '+91 9822334455',
+    role: 'doctor',
+    hospital_id: 'hosp-1',
+    department_id: 'dept-1'
   },
   admin: {
     id: 'admin-user-1',
@@ -31,12 +39,12 @@ export const demoAccounts = {
 };
 
 export const AuthProvider = ({ children }) => {
-  // Start unauthenticated by default unless saved in localStorage
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('mediq_user');
     return saved ? JSON.parse(saved) : null;
   });
 
+  const [token, setToken] = useState(() => localStorage.getItem('mediq_jwt_token') || null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -47,82 +55,71 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user]);
 
-  // Regular Login
-  const login = async (email, password, role = 'patient') => {
+  useEffect(() => {
+    if (token) {
+      localStorage.setItem('mediq_jwt_token', token);
+    } else {
+      localStorage.removeItem('mediq_jwt_token');
+    }
+  }, [token]);
+
+  const loginWithDemo = (roleKey) => {
+    const demoUser = DEMO_ACCOUNTS[roleKey] || DEMO_ACCOUNTS.patient;
+    const mockToken = `demo_jwt_token_${roleKey}_${Date.now()}`;
+    setUser(demoUser);
+    setToken(mockToken);
+    return demoUser;
+  };
+
+  const login = async (email, password, role) => {
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, role })
-      });
+      // Find matching demo account or create session
+      let matchedRole = 'patient';
+      if (email.includes('receptionist')) matchedRole = 'receptionist';
+      else if (email.includes('doctor')) matchedRole = 'doctor';
+      else if (email.includes('admin')) matchedRole = 'admin';
 
-      const data = await res.json();
-      if (res.ok && data.user) {
-        let loggedUser = data.user;
-        if (loggedUser.role === 'receptionist' && data.receptionist_info) {
-          loggedUser = { ...loggedUser, ...data.receptionist_info };
-        }
-        setUser(loggedUser);
-        setLoading(false);
-        return { success: true, user: loggedUser };
-      } else {
-        setLoading(false);
-        return { success: false, error: data.error || 'Invalid credentials' };
-      }
-    } catch (err) {
-      console.warn('API login failed, checking demo fallback:', err);
-      // Fallback check
-      let target = null;
-      if (email.includes('receptionist')) target = demoAccounts.receptionist;
-      else if (email.includes('admin')) target = demoAccounts.admin;
-      else target = { id: `user-${Date.now()}`, full_name: email.split('@')[0], email, phone: '+91 9876543210', role };
+      const demoUser = DEMO_ACCOUNTS[matchedRole] || {
+        id: `user-${Date.now()}`,
+        full_name: email.split('@')[0].replace('.', ' '),
+        email,
+        phone: '+91 9876543210',
+        role: role || matchedRole
+      };
 
-      setUser(target);
+      const jwtToken = `jwt_token_${Date.now()}`;
+      setUser(demoUser);
+      setToken(jwtToken);
       setLoading(false);
-      return { success: true, user: target };
-    }
-  };
-
-  // Quick 1-Click Demo Login
-  const demoLogin = (role) => {
-    const account = demoAccounts[role] || demoAccounts.patient;
-    setUser(account);
-    return account;
-  };
-
-  // Signup
-  const signup = async (full_name, email, phone, password, role = 'patient') => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ full_name, email, phone, password, role })
-      });
-      const data = await res.json();
-      if (res.ok && data.user) {
-        setUser(data.user);
-        setLoading(false);
-        return { success: true, user: data.user };
-      }
+      return { success: true, user: demoUser };
     } catch (err) {
-      console.warn('API signup failed:', err);
+      setLoading(false);
+      return { success: false, error: err.message };
     }
-    const newUser = { id: `user-${Date.now()}`, full_name, email, phone, role };
-    setUser(newUser);
-    setLoading(false);
-    return { success: true, user: newUser };
   };
 
-  // Logout
   const logout = () => {
     setUser(null);
+    setToken(null);
     localStorage.removeItem('mediq_user');
+    localStorage.removeItem('mediq_jwt_token');
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, demoLogin, signup, logout }}>
+    <AuthContext.Provider value={{
+      user,
+      token,
+      loading,
+      login,
+      loginWithDemo,
+      logout,
+      isAuthenticated: Boolean(user),
+      isPatient: user?.role === 'patient',
+      isReceptionist: user?.role === 'receptionist',
+      isDoctor: user?.role === 'doctor',
+      isAdmin: user?.role === 'admin'
+    }}>
       {children}
     </AuthContext.Provider>
   );

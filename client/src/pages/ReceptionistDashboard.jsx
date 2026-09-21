@@ -1,490 +1,628 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useQueue } from '../context/QueueContext';
-import { playChimeAlert } from '../utils/audioAlert';
-import { 
-  UserCheck, 
-  BellRing, 
-  CheckCircle2, 
-  XCircle, 
-  PlusCircle, 
-  RotateCcw, 
-  Search, 
-  Filter, 
-  Clock, 
-  Users, 
-  Hospital, 
-  Stethoscope, 
-  Phone, 
-  User, 
-  X,
-  Sparkles,
-  Ticket
+import React, { useState } from 'react';
+import {
+  Users, UserPlus, Play, CheckCircle2, UserX, PauseCircle, PlayCircle,
+  Volume2, Search, QrCode, AlertTriangle, ShieldAlert, Sparkles, Phone, Clock, Navigation
 } from 'lucide-react';
+import { useQueue } from '../context/QueueContext';
 
 export default function ReceptionistDashboard() {
-  const { user } = useAuth();
-  const { hospitalQueue, queueStats, callNext, updateTokenStatus, fetchHospitalQueue } = useQueue();
+  const {
+    hospitalQueue, queueStats, isDeptPaused, pauseReason,
+    callNextPatient, startConsultation, completeToken, skipToken, cancelToken,
+    createWalkInToken, togglePauseQueue, assignTokenPriority, fetchTokenStatus
+  } = useQueue();
 
   const [selectedDept, setSelectedDept] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  
-  // Walk-in modal state
+  const [statusFilter, setStatusFilter] = useState('all');
   const [showWalkInModal, setShowWalkInModal] = useState(false);
-  const [walkInName, setWalkInName] = useState('');
-  const [walkInPhone, setWalkInPhone] = useState('');
-  const [walkInDept, setWalkInDept] = useState('dept-1');
-  const [walkInNotes, setWalkInNotes] = useState('');
-  const [submittingWalkIn, setSubmittingWalkIn] = useState(false);
+  const [showPriorityModal, setShowPriorityModal] = useState(null);
+  const [showPauseModal, setShowPauseModal] = useState(false);
+  const [showQRScanModal, setShowQRScanModal] = useState(false);
+  const [qrRefInput, setQrRefInput] = useState('');
+  const [scannedTokenResult, setScannedTokenResult] = useState(null);
 
-  // Selected Patient Details Drawer
-  const [activePatientDrawer, setActivePatientDrawer] = useState(null);
+  // Form States
+  const [walkinName, setWalkinName] = useState('');
+  const [walkinPhone, setWalkinPhone] = useState('');
+  const [walkinDept, setWalkinDept] = useState('dept-1');
+  const [walkinPriority, setWalkinPriority] = useState('NORMAL');
+  const [walkinNotes, setWalkinNotes] = useState('');
 
-  const hospitalId = user?.hospital_id || 'hosp-1';
+  const [priorityLevel, setPriorityLevel] = useState('PRIORITY');
+  const [priorityReason, setPriorityReason] = useState('');
+  const [pauseInputReason, setPauseInputReason] = useState('');
 
-  useEffect(() => {
-    fetchHospitalQueue(hospitalId, selectedDept, selectedStatus);
-  }, [hospitalId, selectedDept, selectedStatus, fetchHospitalQueue]);
+  const [loading, setLoading] = useState(false);
 
-  // Handle Call Next Patient
-  const handleCallNext = async () => {
-    const res = await callNext(hospitalId, selectedDept);
-    if (res.success) {
-      playChimeAlert('call');
-    }
-  };
-
-  // Handle Walk-in Token Submission
-  const handleCreateWalkIn = async (e) => {
-    e.preventDefault();
-    setSubmittingWalkIn(true);
-    try {
-      const res = await fetch('/api/tokens/walkin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          patient_name: walkInName || 'Walk-in Patient',
-          patient_phone: walkInPhone || '+91 9999900000',
-          hospital_id: hospitalId,
-          department_id: walkInDept,
-          notes: walkInNotes
-        })
-      });
-      if (res.ok) {
-        setShowWalkInModal(false);
-        setWalkInName('');
-        setWalkInPhone('');
-        setWalkInNotes('');
-        await fetchHospitalQueue(hospitalId, selectedDept, selectedStatus);
-      }
-    } catch (err) {
-      console.error('Failed to create walk-in token:', err);
-    } finally {
-      setSubmittingWalkIn(false);
-    }
-  };
-
-  // Handle Reset Queue
-  const handleResetQueue = async () => {
-    if (window.confirm('Are you sure you want to reset today\'s queue for this hospital? All waiting tokens will be cleared.')) {
-      try {
-        await fetch(`/api/receptionist/${hospitalId}/reset`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ departmentId: selectedDept })
-        });
-        await fetchHospitalQueue(hospitalId, selectedDept, selectedStatus);
-      } catch (err) {
-        console.error('Reset queue error:', err);
-      }
-    }
-  };
-
-  // Filter queue by search query
+  // Filter Queue
   const filteredQueue = hospitalQueue.filter(t => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      t.patient_name.toLowerCase().includes(q) ||
-      t.token_number.toLowerCase().includes(q) ||
-      (t.patient_phone && t.patient_phone.includes(q))
-    );
+    if (selectedDept !== 'all' && t.department_id !== selectedDept) return false;
+    if (statusFilter !== 'all' && t.status !== statusFilter) return false;
+    return true;
   });
 
+  const activeInConsultation = hospitalQueue.find(t => t.status === 'in_consultation');
+  const activeCalled = hospitalQueue.find(t => t.status === 'called');
+
+  const handleCallNext = async () => {
+    setLoading(true);
+    await callNextPatient('hosp-1', selectedDept);
+    setLoading(false);
+  };
+
+  const handleCreateWalkin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    await createWalkInToken({
+      patient_name: walkinName,
+      patient_phone: walkinPhone,
+      hospital_id: 'hosp-1',
+      department_id: walkinDept,
+      priority: walkinPriority,
+      notes: walkinNotes
+    });
+    setShowWalkInModal(false);
+    setWalkinName('');
+    setWalkinPhone('');
+    setWalkinNotes('');
+    setLoading(false);
+  };
+
+  const handleAssignPriority = async (e) => {
+    e.preventDefault();
+    if (!showPriorityModal) return;
+    setLoading(true);
+    await assignTokenPriority(showPriorityModal.id, priorityLevel, priorityReason);
+    setShowPriorityModal(null);
+    setPriorityReason('');
+    setLoading(false);
+  };
+
+  const handleTogglePause = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    await togglePauseQueue('hosp-1', 'dept-1', !isDeptPaused, pauseInputReason);
+    setShowPauseModal(false);
+    setPauseInputReason('');
+    setLoading(false);
+  };
+
+  const handleQRSearch = async (e) => {
+    e.preventDefault();
+    if (!qrRefInput) return;
+    try {
+      const res = await fetch(`/api/tokens/ref/${qrRefInput.trim()}`);
+      if (res.ok) {
+        const data = await res.json();
+        setScannedTokenResult(data);
+      } else {
+        alert('Reference ID not found');
+      }
+    } catch (err) {
+      alert('Search failed');
+    }
+  };
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      
-      {/* Header & Main Control Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 text-xs font-bold uppercase tracking-wider mb-2">
-            <UserCheck className="w-3.5 h-3.5 text-teal-600" />
-            <span>Hospital OPD Reception Portal</span>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+
+        {/* Dashboard Header Bar */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold font-heading text-slate-900 dark:text-white">
+                Reception Queue Management Desk
+              </h1>
+              {isDeptPaused && (
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500 text-white animate-pulse">
+                  QUEUE PAUSED
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              City Care Super Specialty Hospital • Real-Time Unified Queue Control
+            </p>
           </div>
-          <h1 className="font-heading font-extrabold text-3xl text-slate-900 dark:text-white flex items-center gap-2">
-            <span>{user?.hospital_name || 'City Care Super Specialty Hospital'}</span>
-          </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Manage live patient queues, call next tokens with instant audio chimes, mark complete, and issue walk-in tokens.
-          </p>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => setShowQRScanModal(true)}
+              className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs flex items-center gap-1.5 transition-colors"
+            >
+              <QrCode className="w-4 h-4" /> Scan QR Ref
+            </button>
+
+            <button
+              onClick={() => setShowPauseModal(true)}
+              className={`px-3.5 py-2 rounded-xl font-semibold text-xs flex items-center gap-1.5 transition-colors ${
+                isDeptPaused
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 hover:bg-amber-200'
+              }`}
+            >
+              {isDeptPaused ? <PlayCircle className="w-4 h-4" /> : <PauseCircle className="w-4 h-4" />}
+              {isDeptPaused ? 'Resume Queue' : 'Pause Queue'}
+            </button>
+
+            <button
+              onClick={() => setShowWalkInModal(true)}
+              className="px-4 py-2 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs shadow-md shadow-primary-600/20 transition-all flex items-center gap-1.5"
+            >
+              <UserPlus className="w-4 h-4" /> Create Walk-in Token
+            </button>
+          </div>
         </div>
 
-        {/* Primary Operational Actions */}
-        <div className="flex flex-wrap items-center gap-3">
-          
-          {/* Call Next Button */}
+        {/* Real-time Queue Counters Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
+            <span className="text-xs font-semibold text-slate-500">Waiting</span>
+            <div className="text-2xl font-extrabold font-heading text-blue-600 dark:text-blue-400">
+              {hospitalQueue.filter(t => t.status === 'waiting').length}
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
+            <span className="text-xs font-semibold text-slate-500">In OPD Room</span>
+            <div className="text-2xl font-extrabold font-heading text-emerald-600 dark:text-emerald-400">
+              {activeInConsultation ? `#${activeInConsultation.token_number}` : 'None'}
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
+            <span className="text-xs font-semibold text-slate-500">Completed Today</span>
+            <div className="text-2xl font-extrabold font-heading text-slate-900 dark:text-white">
+              {queueStats.completedTokens || hospitalQueue.filter(t => t.status === 'completed').length}
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
+            <span className="text-xs font-semibold text-slate-500">Cancelled</span>
+            <div className="text-2xl font-extrabold font-heading text-red-500">
+              {hospitalQueue.filter(t => t.status === 'cancelled').length}
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
+            <span className="text-xs font-semibold text-slate-500">No-Shows</span>
+            <div className="text-2xl font-extrabold font-heading text-amber-500">
+              {hospitalQueue.filter(t => t.status === 'no_show').length}
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
+            <span className="text-xs font-semibold text-slate-500">Avg Wait Time</span>
+            <div className="text-2xl font-extrabold font-heading text-slate-800 dark:text-slate-200">
+              {queueStats.avgWaitMinutes || 14}m
+            </div>
+          </div>
+        </div>
+
+        {/* Primary Call Next Action Hero Banner */}
+        <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-3xl p-6 sm:p-8 shadow-lg shadow-primary-600/20 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wider bg-white/20 text-white px-3 py-1 rounded-full">
+              Live Queue Audio Dispatcher
+            </span>
+            <h2 className="text-2xl font-extrabold font-heading mt-2">
+              Currently Serving: {activeInConsultation ? `Token #${activeInConsultation.token_number}` : activeCalled ? `Token #${activeCalled.token_number} (Called)` : 'None'}
+            </h2>
+            <p className="text-xs text-primary-100 mt-1 max-w-lg">
+              Clicking "Call Next Patient" selects the highest priority waiting token (EMERGENCY &gt; PRIORITY &gt; NORMAL) and broadcasts audio chime &amp; socket alerts.
+            </p>
+          </div>
+
           <button
             onClick={handleCallNext}
-            className="px-6 py-3 rounded-2xl brand-gradient text-white font-extrabold text-sm shadow-xl shadow-red-900/25 hover:scale-105 transition-all flex items-center gap-2"
+            disabled={loading || isDeptPaused}
+            className="w-full md:w-auto py-4 px-8 rounded-2xl bg-white text-primary-600 hover:bg-primary-50 font-extrabold text-base shadow-xl flex items-center justify-center gap-2 transition-all transform active:scale-95"
           >
-            <BellRing className="w-5 h-5 animate-pulse" />
-            <span>CALL NEXT PATIENT</span>
+            <Volume2 className="w-5 h-5 text-primary-600" /> Call Next Patient
           </button>
-
-          {/* Add Walk-in Token */}
-          <button
-            onClick={() => setShowWalkInModal(true)}
-            className="px-4 py-3 rounded-2xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs shadow-md transition-colors flex items-center gap-1.5"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>Add Walk-in Token</span>
-          </button>
-
-          {/* Reset Queue */}
-          <button
-            onClick={handleResetQueue}
-            className="px-3.5 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-red-600 text-xs font-semibold transition-colors flex items-center gap-1"
-            title="Reset Queue"
-          >
-            <RotateCcw className="w-4 h-4" />
-            <span className="hidden sm:inline">Reset</span>
-          </button>
-
-        </div>
-      </div>
-
-      {/* Daily Performance Statistics Bar */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        
-        <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
-          <div className="text-xs text-slate-400 font-medium">Total Issued Today</div>
-          <div className="font-heading font-extrabold text-2xl text-slate-900 dark:text-white">
-            {queueStats.total} Tokens
-          </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
-          <div className="text-xs text-slate-400 font-medium">Waiting in Line</div>
-          <div className="font-heading font-extrabold text-2xl text-amber-600 dark:text-amber-400">
-            {queueStats.waiting} Patients
-          </div>
-        </div>
+        {/* Unified Queue Table */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden space-y-4 p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+            <h2 className="text-lg font-bold font-heading text-slate-900 dark:text-white">
+              Unified Patient Queue ({filteredQueue.length})
+            </h2>
 
-        <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
-          <div className="text-xs text-slate-400 font-medium">In Progress / Called</div>
-          <div className="font-heading font-extrabold text-2xl text-[#C81E3A]">
-            {queueStats.inProgress} Active
-          </div>
-        </div>
+            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-3">
+              <select
+                value={selectedDept}
+                onChange={(e) => setSelectedDept(e.target.value)}
+                className="bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 rounded-xl px-3 py-2 focus:outline-none"
+              >
+                <option value="all">All Departments</option>
+                <option value="dept-1">Cardiology</option>
+                <option value="dept-2">Orthopedics</option>
+                <option value="dept-3">General Medicine</option>
+                <option value="dept-4">Neurology</option>
+              </select>
 
-        <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
-          <div className="text-xs text-slate-400 font-medium">Completed OPDs</div>
-          <div className="font-heading font-extrabold text-2xl text-emerald-600 dark:text-emerald-400">
-            {queueStats.completed} Patients
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 col-span-2 md:col-span-1">
-          <div className="text-xs text-slate-400 font-medium">Avg Consultation</div>
-          <div className="font-heading font-extrabold text-2xl text-teal-600 dark:text-teal-400">
-            ~{queueStats.avgWaitMinutes} Mins
-          </div>
-        </div>
-
-      </div>
-
-      {/* Filter & Search Bar */}
-      <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-        
-        {/* Search */}
-        <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search patient name, phone, or token #"
-            className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs focus:ring-2 focus:ring-teal-500 outline-none"
-          />
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          
-          <div className="flex items-center gap-1.5 text-xs">
-            <Stethoscope className="w-3.5 h-3.5 text-slate-400" />
-            <select
-              value={selectedDept}
-              onChange={(e) => setSelectedDept(e.target.value)}
-              className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-medium focus:ring-2 focus:ring-teal-500 outline-none"
-            >
-              <option value="all">All Departments</option>
-              <option value="dept-1">Cardiology (Dr. Rajesh)</option>
-              <option value="dept-2">Orthopedics (Dr. Anita)</option>
-              <option value="dept-3">General Medicine (Dr. Vikram)</option>
-              <option value="dept-4">Neurology (Dr. Sanjay)</option>
-            </select>
-          </div>
-
-          <div className="flex items-center gap-1.5 text-xs">
-            <Filter className="w-3.5 h-3.5 text-slate-400" />
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-medium focus:ring-2 focus:ring-teal-500 outline-none"
-            >
-              <option value="all">All Statuses</option>
-              <option value="waiting">Waiting Only</option>
-              <option value="called">Called / In Progress</option>
-              <option value="completed">Completed Only</option>
-              <option value="no_show">Skipped / No-Show</option>
-            </select>
-          </div>
-
-        </div>
-      </div>
-
-      {/* Live Queue Table Component */}
-      <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            
-            <thead className="bg-slate-50 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-700 text-slate-500 uppercase font-mono tracking-wider">
-              <tr>
-                <th className="px-6 py-4 font-semibold">Token #</th>
-                <th className="px-6 py-4 font-semibold">Patient Info</th>
-                <th className="px-6 py-4 font-semibold">Department & Doctor</th>
-                <th className="px-6 py-4 font-semibold">Status</th>
-                <th className="px-6 py-4 font-semibold">Time Created</th>
-                <th className="px-6 py-4 font-semibold text-right">Quick Actions</th>
-              </tr>
-            </thead>
-
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-              {filteredQueue.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-12 text-slate-400">
-                    No active tokens match the filter. Click "CALL NEXT PATIENT" or "Add Walk-in Token".
-                  </td>
-                </tr>
-              ) : (
-                filteredQueue.map(token => (
-                  <tr key={token.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/50 transition-colors">
-                    
-                    {/* Token # */}
-                    <td className="px-6 py-4">
-                      <span className="font-heading font-black text-lg text-[#C81E3A]">
-                        #{token.token_number}
-                      </span>
-                    </td>
-
-                    {/* Patient Info */}
-                    <td className="px-6 py-4">
-                      <div
-                        onClick={() => setActivePatientDrawer(token)}
-                        className="cursor-pointer group"
-                      >
-                        <div className="font-bold text-slate-900 dark:text-white group-hover:text-teal-600 transition-colors flex items-center gap-1">
-                          <User className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{token.patient_name}</span>
-                        </div>
-                        <div className="text-[11px] text-slate-400 flex items-center gap-1">
-                          <Phone className="w-3 h-3" />
-                          <span>{token.patient_phone}</span>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Dept */}
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-slate-800 dark:text-slate-200">
-                        {token.department_name || 'Cardiology'}
-                      </div>
-                      <div className="text-[11px] text-slate-400">
-                        {token.doctor_name || 'Dr. Rajesh'} ({token.room_no || 'OPD-102'})
-                      </div>
-                    </td>
-
-                    {/* Status Badge */}
-                    <td className="px-6 py-4">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                        token.status === 'called' || token.status === 'in_progress'
-                          ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 animate-pulse'
-                          : token.status === 'completed'
-                          ? 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
-                          : token.status === 'no_show' || token.status === 'cancelled'
-                          ? 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300'
-                          : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300'
-                      }`}>
-                        {token.status}
-                      </span>
-                    </td>
-
-                    {/* Time */}
-                    <td className="px-6 py-4 text-slate-500 font-mono">
-                      {new Date(token.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </td>
-
-                    {/* Actions */}
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        
-                        {token.status === 'waiting' && (
-                          <button
-                            onClick={async () => {
-                              await updateTokenStatus(token.id, 'call');
-                              playChimeAlert('call');
-                            }}
-                            className="px-2.5 py-1.5 rounded-lg brand-gradient text-white font-bold text-[11px] hover:opacity-95 flex items-center gap-1 shadow-sm"
-                            title="Call Patient"
-                          >
-                            <BellRing className="w-3.5 h-3.5" />
-                            <span>Call</span>
-                          </button>
-                        )}
-
-                        {(token.status === 'called' || token.status === 'in_progress' || token.status === 'waiting') && (
-                          <button
-                            onClick={() => updateTokenStatus(token.id, 'complete')}
-                            className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center gap-1 shadow-sm"
-                            title="Mark Complete"
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Complete</span>
-                          </button>
-                        )}
-
-                        {token.status === 'waiting' && (
-                          <button
-                            onClick={() => updateTokenStatus(token.id, 'skip')}
-                            className="px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-red-600 font-medium text-[11px]"
-                            title="Mark No-Show / Skip"
-                          >
-                            <XCircle className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-
-                      </div>
-                    </td>
-
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Add Walk-in Token Modal */}
-      {showWalkInModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4 text-slate-900 dark:text-white">
-            
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl teal-gradient flex items-center justify-center text-white">
-                  <PlusCircle className="w-4 h-4" />
-                </div>
-                <h3 className="font-heading font-bold text-base">Add Walk-in OPD Token</h3>
-              </div>
-              <button onClick={() => setShowWalkInModal(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 rounded-xl px-3 py-2 focus:outline-none"
+              >
+                <option value="all">All Statuses</option>
+                <option value="waiting">Waiting</option>
+                <option value="called">Called</option>
+                <option value="in_consultation">In Consultation</option>
+                <option value="completed">Completed</option>
+                <option value="no_show">No Show</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
             </div>
+          </div>
 
-            <form onSubmit={handleCreateWalkIn} className="space-y-3 text-xs">
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-100 dark:border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  <th className="py-3 px-3">Token #</th>
+                  <th className="py-3 px-3">Patient Name</th>
+                  <th className="py-3 px-3">Type</th>
+                  <th className="py-3 px-3">Priority</th>
+                  <th className="py-3 px-3">Intent Status</th>
+                  <th className="py-3 px-3">Queue Status</th>
+                  <th className="py-3 px-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                {filteredQueue.length > 0 ? (
+                  filteredQueue.map((token) => (
+                    <tr key={token.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                      <td className="py-3.5 px-3 font-extrabold text-slate-900 dark:text-white font-heading text-sm">
+                        #{token.token_number}
+                      </td>
+
+                      <td className="py-3.5 px-3">
+                        <div className="font-semibold text-slate-800 dark:text-slate-200">
+                          {token.patient_name}
+                        </div>
+                        <div className="text-[11px] text-slate-400 font-normal">
+                          {token.patient_phone} • {token.notes || 'General OPD'}
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-3">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          token.patient_type === 'walkin'
+                            ? 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300'
+                            : 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
+                        }`}>
+                          {token.patient_type}
+                        </span>
+                      </td>
+
+                      <td className="py-3.5 px-3">
+                        <button
+                          onClick={() => setShowPriorityModal(token)}
+                          className="flex items-center gap-1 group"
+                        >
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                            token.priority === 'EMERGENCY' ? 'bg-red-600 text-white animate-pulse' :
+                            token.priority === 'PRIORITY' ? 'bg-amber-500 text-white' :
+                            'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                          }`}>
+                            {token.priority}
+                          </span>
+                        </button>
+                      </td>
+
+                      <td className="py-3.5 px-3">
+                        {token.intent_status === 'on_my_way' ? (
+                          <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1 text-[11px]">
+                            <Navigation className="w-3.5 h-3.5" /> On the way
+                          </span>
+                        ) : token.intent_status === 'cant_come' ? (
+                          <span className="text-red-500 font-semibold text-[11px]">Can't come</span>
+                        ) : token.intent_status === 'arrived' ? (
+                          <span className="text-slate-600 dark:text-slate-400 font-medium text-[11px]">Arrived</span>
+                        ) : (
+                          <span className="text-slate-400 text-[11px]">Not specified</span>
+                        )}
+                      </td>
+
+                      <td className="py-3.5 px-3">
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                          token.status === 'in_consultation' ? 'bg-emerald-600 text-white animate-pulse' :
+                          token.status === 'called' ? 'bg-amber-500 text-white animate-pulse' :
+                          token.status === 'waiting' ? 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300' :
+                          token.status === 'completed' ? 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300' :
+                          'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300'
+                        }`}>
+                          {token.status.replace('_', ' ')}
+                        </span>
+                      </td>
+
+                      <td className="py-3.5 px-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {token.status === 'waiting' && (
+                            <button
+                              onClick={() => startConsultation(token.id)}
+                              className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 transition-colors"
+                              title="Start Consultation"
+                            >
+                              <Play className="w-4 h-4" />
+                            </button>
+                          )}
+                          {(token.status === 'called' || token.status === 'in_consultation') && (
+                            <button
+                              onClick={() => completeToken(token.id)}
+                              className="p-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+                              title="Complete"
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                            </button>
+                          )}
+                          {token.status !== 'completed' && token.status !== 'cancelled' && (
+                            <button
+                              onClick={() => skipToken(token.id)}
+                              className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 transition-colors"
+                              title="Skip / No Show"
+                            >
+                              <UserX className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-slate-400">
+                      No tokens found matching selected filters.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Modal: Create Walk-In Token */}
+      {showWalkInModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 border border-slate-200 dark:border-slate-800 shadow-2xl">
+            <h3 className="text-xl font-bold font-heading text-slate-900 dark:text-white">
+              Create Walk-in OPD Token
+            </h3>
+
+            <form onSubmit={handleCreateWalkin} className="space-y-4 text-xs font-semibold">
               <div>
-                <label className="block font-semibold mb-1">Patient Name</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1">Patient Full Name</label>
                 <input
                   type="text"
                   required
-                  value={walkInName}
-                  onChange={(e) => setWalkInName(e.target.value)}
-                  placeholder="e.g. Ramesh Chandra"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-teal-500 outline-none"
+                  value={walkinName}
+                  onChange={(e) => setWalkinName(e.target.value)}
+                  placeholder="e.g. Ramesh Kumar"
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold mb-1">Phone Number</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1">Phone Number</label>
                 <input
-                  type="tel"
-                  value={walkInPhone}
-                  onChange={(e) => setWalkInPhone(e.target.value)}
-                  placeholder="+91 9800000000"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-teal-500 outline-none"
+                  type="text"
+                  value={walkinPhone}
+                  onChange={(e) => setWalkinPhone(e.target.value)}
+                  placeholder="+91 9876543210"
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold mb-1">Target Department</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1">Department</label>
                 <select
-                  value={walkInDept}
-                  onChange={(e) => setWalkInDept(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-teal-500 outline-none font-medium"
+                  value={walkinDept}
+                  onChange={(e) => setWalkinDept(e.target.value)}
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
                 >
-                  <option value="dept-1">Cardiology (Dr. Rajesh)</option>
-                  <option value="dept-2">Orthopedics (Dr. Anita)</option>
-                  <option value="dept-3">General Medicine (Dr. Vikram)</option>
-                  <option value="dept-4">Neurology (Dr. Sanjay)</option>
+                  <option value="dept-1">Cardiology (Dr. Rajesh Sharma)</option>
+                  <option value="dept-2">Orthopedics (Dr. Anita Desai)</option>
+                  <option value="dept-3">General Medicine (Dr. Vikram Patel)</option>
+                  <option value="dept-4">Neurology (Dr. Sanjay Verma)</option>
                 </select>
               </div>
 
               <div>
-                <label className="block font-semibold mb-1">Reception Notes</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1">Priority</label>
+                <select
+                  value={walkinPriority}
+                  onChange={(e) => setWalkinPriority(e.target.value)}
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                >
+                  <option value="NORMAL">NORMAL</option>
+                  <option value="PRIORITY">PRIORITY</option>
+                  <option value="EMERGENCY">EMERGENCY</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1">Notes / Complaint</label>
                 <input
                   type="text"
-                  value={walkInNotes}
-                  onChange={(e) => setWalkInNotes(e.target.value)}
-                  placeholder="Walk-in desk issue"
-                  className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-teal-500 outline-none"
+                  value={walkinNotes}
+                  onChange={(e) => setWalkinNotes(e.target.value)}
+                  placeholder="e.g. Chest pain complaint"
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
                 />
               </div>
 
-              <div className="pt-2">
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowWalkInModal(false)}
+                  className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold"
+                >
+                  Cancel
+                </button>
                 <button
                   type="submit"
-                  disabled={submittingWalkIn}
-                  className="w-full py-3 rounded-2xl teal-gradient text-white font-semibold shadow-md hover:opacity-95 transition-opacity"
+                  disabled={loading}
+                  className="flex-1 py-3 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-bold"
                 >
-                  {submittingWalkIn ? 'Issuing...' : 'Issue Walk-in Token'}
+                  Generate Token
                 </button>
               </div>
             </form>
-
           </div>
         </div>
       )}
 
-      {/* Patient Detail Drawer */}
-      {activePatientDrawer && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl border space-y-4">
-            <div className="flex items-center justify-between border-b pb-2">
-              <h3 className="font-heading font-bold text-base">Patient OPD Details</h3>
-              <button onClick={() => setActivePatientDrawer(null)}><X className="w-5 h-5" /></button>
-            </div>
-            <div className="space-y-2 text-xs">
-              <div><span className="text-slate-400">Token Number:</span> <strong className="text-[#C81E3A] font-heading font-extrabold text-base">#{activePatientDrawer.token_number}</strong></div>
-              <div><span className="text-slate-400">Full Name:</span> <strong>{activePatientDrawer.patient_name}</strong></div>
-              <div><span className="text-slate-400">Phone:</span> {activePatientDrawer.patient_phone}</div>
-              <div><span className="text-slate-400">Department:</span> {activePatientDrawer.department_name} ({activePatientDrawer.doctor_name})</div>
-              <div><span className="text-slate-400">Notes:</span> {activePatientDrawer.notes || 'Routine consultation'}</div>
-            </div>
+      {/* Modal: Assign Priority */}
+      {showPriorityModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 border border-slate-200 dark:border-slate-800 shadow-2xl">
+            <h3 className="text-xl font-bold font-heading text-slate-900 dark:text-white">
+              Assign Token Priority
+            </h3>
+            <p className="text-xs text-slate-500">
+              Assigning high priority automatically shifts Token #{showPriorityModal.token_number} ahead in the OPD queue.
+            </p>
+
+            <form onSubmit={handleAssignPriority} className="space-y-4 text-xs font-semibold">
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1">Priority Classification</label>
+                <select
+                  value={priorityLevel}
+                  onChange={(e) => setPriorityLevel(e.target.value)}
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                >
+                  <option value="NORMAL">NORMAL</option>
+                  <option value="PRIORITY">PRIORITY</option>
+                  <option value="EMERGENCY">EMERGENCY (Top Priority)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1">Reason / Clinical Note</label>
+                <input
+                  type="text"
+                  required
+                  value={priorityReason}
+                  onChange={(e) => setPriorityReason(e.target.value)}
+                  placeholder="e.g. Acute hypertension or elderly patient"
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowPriorityModal(null)}
+                  className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 py-3 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-bold"
+                >
+                  Confirm Priority
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Pause / Resume Queue */}
+      {showPauseModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 border border-slate-200 dark:border-slate-800 shadow-2xl">
+            <h3 className="text-xl font-bold font-heading text-slate-900 dark:text-white">
+              {isDeptPaused ? 'Resume OPD Queue' : 'Pause OPD Queue'}
+            </h3>
+
+            <form onSubmit={handleTogglePause} className="space-y-4 text-xs font-semibold">
+              {!isDeptPaused && (
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1">Pause Reason</label>
+                  <input
+                    type="text"
+                    value={pauseInputReason}
+                    onChange={(e) => setPauseInputReason(e.target.value)}
+                    placeholder="e.g. Doctor emergency rounds / lunch break"
+                    className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                  />
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowPauseModal(false)}
+                  className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className={`flex-1 py-3 rounded-xl font-bold text-white ${isDeptPaused ? 'bg-emerald-600' : 'bg-amber-600'}`}
+                >
+                  {isDeptPaused ? 'Resume' : 'Pause'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Scan / Enter QR Reference */}
+      {showQRScanModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 border border-slate-200 dark:border-slate-800 shadow-2xl">
+            <h3 className="text-xl font-bold font-heading text-slate-900 dark:text-white flex items-center gap-2">
+              <QrCode className="w-6 h-6 text-primary-600" /> Scan or Enter QR Reference
+            </h3>
+
+            <form onSubmit={handleQRSearch} className="space-y-4 text-xs font-semibold">
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1">QR Reference ID / Token Number</label>
+                <input
+                  type="text"
+                  required
+                  value={qrRefInput}
+                  onChange={(e) => setQrRefInput(e.target.value)}
+                  placeholder="e.g. REF-MEDIQ-103-CARD or 103"
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 rounded-xl bg-primary-600 text-white font-bold"
+              >
+                Lookup Patient Token
+              </button>
+            </form>
+
+            {scannedTokenResult && (
+              <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-4 space-y-2 border border-slate-200 dark:border-slate-700 text-xs">
+                <div className="font-extrabold text-base text-slate-900 dark:text-white">
+                  Token #{scannedTokenResult.token_number}
+                </div>
+                <div>Patient: <span className="font-bold">{scannedTokenResult.patient_name}</span></div>
+                <div>Status: <span className="font-bold uppercase text-primary-600">{scannedTokenResult.status}</span></div>
+                <div>Department: {scannedTokenResult.department_name}</div>
+              </div>
+            )}
+
             <button
-              onClick={() => setActivePatientDrawer(null)}
-              className="w-full py-2 bg-slate-100 dark:bg-slate-700 font-semibold text-xs rounded-xl"
+              onClick={() => { setShowQRScanModal(false); setScannedTokenResult(null); }}
+              className="w-full py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs"
             >
               Close
             </button>

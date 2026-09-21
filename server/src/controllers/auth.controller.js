@@ -1,5 +1,5 @@
 import { store } from '../data/store.js';
-import { supabase, isSupabaseConfigured } from '../config/supabaseClient.js';
+import { generateJWT } from '../config/jwt.js';
 
 export const signup = async (req, res) => {
   try {
@@ -9,38 +9,13 @@ export const signup = async (req, res) => {
       return res.status(400).json({ error: 'Full name and email are required' });
     }
 
-    if (isSupabaseConfigured) {
-      // Supabase auth signup
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password: password || 'MediQSecret123!',
-        options: {
-          data: { full_name, phone, role }
-        }
-      });
-
-      if (authError) {
-        return res.status(400).json({ error: authError.message });
-      }
-
-      // Insert record into custom users table
-      const { data: userRecord, error: userError } = await supabase
-        .from('users')
-        .insert([{ id: authData.user.id, full_name, email, phone, role }])
-        .select()
-        .single();
-
-      return res.status(201).json({
-        message: 'Signup successful',
-        user: userRecord || { id: authData.user.id, full_name, email, phone, role }
-      });
-    }
-
-    // Fallback store signup
     const user = store.addUser({ full_name, email, phone, role });
+    const token = generateJWT(user);
+
     return res.status(201).json({
       message: 'Signup successful',
-      user
+      user,
+      token
     });
   } catch (error) {
     console.error('Signup error:', error);
@@ -56,44 +31,17 @@ export const login = async (req, res) => {
       return res.status(400).json({ error: 'Email is required' });
     }
 
-    if (isSupabaseConfigured) {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password: password || 'MediQSecret123!'
-      });
-
-      if (error) {
-        return res.status(401).json({ error: error.message });
-      }
-
-      // Fetch user profile from custom users table
-      const { data: userProfile } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', data.user.id)
-        .single();
-
-      return res.json({
-        message: 'Login successful',
-        user: userProfile || { id: data.user.id, email: data.user.email, role: data.user.user_metadata?.role || 'patient' },
-        session: data.session
-      });
-    }
-
-    // Fallback store login
     let user = store.getUserByEmail(email);
 
     if (!user) {
-      // Auto-create user for frictionless demo login if not existing
       user = store.addUser({
         full_name: email.split('@')[0].replace('.', ' '),
         email,
         phone: '+91 9876543210',
-        role: role || (email.includes('receptionist') ? 'receptionist' : email.includes('admin') ? 'admin' : 'patient')
+        role: role || (email.includes('receptionist') ? 'receptionist' : email.includes('doctor') ? 'doctor' : email.includes('admin') ? 'admin' : 'patient')
       });
     }
 
-    // Attach receptionist metadata if user is a receptionist
     let receptionistInfo = null;
     if (user.role === 'receptionist') {
       receptionistInfo = store.getReceptionistByUserId(user.id) || {
@@ -102,15 +50,40 @@ export const login = async (req, res) => {
         hospital_id: 'hosp-1',
         department_id: 'dept-1'
       };
+      user = { ...user, ...receptionistInfo };
     }
+
+    let doctorInfo = null;
+    if (user.role === 'doctor') {
+      doctorInfo = store.getDoctors({ hospitalId: 'hosp-1' }).find(d => d.user_id === user.id || d.email === email) || {
+        id: 'doc-1',
+        name: user.full_name,
+        hospital_id: 'hosp-1',
+        department_id: 'dept-1',
+        status: 'AVAILABLE'
+      };
+      user = { ...user, ...doctorInfo };
+    }
+
+    const jwtToken = generateJWT(user);
 
     return res.json({
       message: 'Login successful',
       user,
-      receptionist_info: receptionistInfo
+      token: jwtToken
     });
   } catch (error) {
     console.error('Login error:', error);
     return res.status(500).json({ error: 'Server error during login' });
+  }
+};
+
+export const getMe = async (req, res) => {
+  try {
+    const user = store.getUserById(req.user.id);
+    if (!user) return res.status(444).json({ error: 'User profile not found' });
+    return res.json({ user });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to fetch user profile' });
   }
 };

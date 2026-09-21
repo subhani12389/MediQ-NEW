@@ -16,6 +16,7 @@ import HospitalDetail from './pages/HospitalDetail';
 import PatientDashboard from './pages/PatientDashboard';
 import PatientHistory from './pages/PatientHistory';
 import ReceptionistDashboard from './pages/ReceptionistDashboard';
+import DoctorDashboard from './pages/DoctorDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
@@ -63,6 +64,16 @@ export default function App() {
                       element={
                         <ProtectedRoute allowedRoles={['receptionist', 'admin']}>
                           <ReceptionistDashboard />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    {/* Protected Doctor Route */}
+                    <Route
+                      path="/doctor"
+                      element={
+                        <ProtectedRoute allowedRoles={['doctor', 'admin']}>
+                          <DoctorDashboard />
                         </ProtectedRoute>
                       }
                     />

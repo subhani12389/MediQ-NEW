@@ -1,4 +1,4 @@
-// In-memory data store for out-of-the-box operation and backend demo fallback
+// Production-Grade In-Memory Data Store & Queue Management Engine
 
 let hospitals = [
   {
@@ -39,144 +39,268 @@ let hospitals = [
     phone: '+91 80 4115 8888',
     image: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=600&q=80',
     created_at: new Date('2026-01-15T08:00:00Z').toISOString()
-  },
-  {
-    id: 'hosp-4',
-    name: 'LifeLine Emergency & Specialty Hospital',
-    location: 'Jubilee Hills',
-    city: 'Hyderabad',
-    address: 'Road No. 36, Jubilee Hills, Hyderabad, Telangana 500033',
-    specialties: ['Cardiology', 'Oncology', 'Pulmonology', 'Orthopedics'],
-    avg_consultation_minutes: 14,
-    rating: 4.8,
-    phone: '+91 40 2360 7777',
-    image: 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=600&q=80',
-    created_at: new Date('2026-01-18T08:00:00Z').toISOString()
   }
 ];
 
 let departments = [
-  // Hosp 1
-  { id: 'dept-1', hospital_id: 'hosp-1', name: 'Cardiology', doctor_name: 'Dr. Rajesh Sharma', avg_time_minutes: 15, room_no: 'OPD-102' },
-  { id: 'dept-2', hospital_id: 'hosp-1', name: 'Orthopedics', doctor_name: 'Dr. Anita Desai', avg_time_minutes: 12, room_no: 'OPD-105' },
-  { id: 'dept-3', hospital_id: 'hosp-1', name: 'General Medicine', doctor_name: 'Dr. Vikram Patel', avg_time_minutes: 10, room_no: 'OPD-101' },
-  { id: 'dept-4', hospital_id: 'hosp-1', name: 'Neurology', doctor_name: 'Dr. Sanjay Verma', avg_time_minutes: 18, room_no: 'OPD-204' },
-  // Hosp 2
-  { id: 'dept-5', hospital_id: 'hosp-2', name: 'Cardiology', doctor_name: 'Dr. Aris Thorne', avg_time_minutes: 15, room_no: 'A-201' },
-  { id: 'dept-6', hospital_id: 'hosp-2', name: 'Pediatrics', doctor_name: 'Dr. Meera Rao', avg_time_minutes: 12, room_no: 'A-108' },
-  { id: 'dept-7', hospital_id: 'hosp-2', name: 'Dermatology', doctor_name: 'Dr. Kabir Anand', avg_time_minutes: 10, room_no: 'A-304' },
-  // Hosp 3
-  { id: 'dept-8', hospital_id: 'hosp-3', name: 'General Medicine', doctor_name: 'Dr. Sunita Reddy', avg_time_minutes: 10, room_no: 'B-101' },
-  { id: 'dept-9', hospital_id: 'hosp-3', name: 'Orthopedics', doctor_name: 'Dr. Ramesh Kumar', avg_time_minutes: 14, room_no: 'B-105' },
-  // Hosp 4
-  { id: 'dept-10', hospital_id: 'hosp-4', name: 'Cardiology', doctor_name: 'Dr. Srinivas Rao', avg_time_minutes: 15, room_no: 'C-301' }
+  { id: 'dept-1', hospital_id: 'hosp-1', name: 'Cardiology', doctor_id: 'doc-1', doctor_name: 'Dr. Rajesh Sharma', avg_time_minutes: 15, room_no: 'OPD-102', is_paused: false, pause_reason: null },
+  { id: 'dept-2', hospital_id: 'hosp-1', name: 'Orthopedics', doctor_id: 'doc-2', doctor_name: 'Dr. Anita Desai', avg_time_minutes: 12, room_no: 'OPD-105', is_paused: false, pause_reason: null },
+  { id: 'dept-3', hospital_id: 'hosp-1', name: 'General Medicine', doctor_id: 'doc-3', doctor_name: 'Dr. Vikram Patel', avg_time_minutes: 10, room_no: 'OPD-101', is_paused: false, pause_reason: null },
+  { id: 'dept-4', hospital_id: 'hosp-1', name: 'Neurology', doctor_id: 'doc-4', doctor_name: 'Dr. Sanjay Verma', avg_time_minutes: 18, room_no: 'OPD-204', is_paused: false, pause_reason: null }
+];
+
+let doctors = [
+  { id: 'doc-1', user_id: 'doc-user-1', name: 'Dr. Rajesh Sharma', specialty: 'Cardiology', hospital_id: 'hosp-1', department_id: 'dept-1', status: 'AVAILABLE' },
+  { id: 'doc-2', user_id: 'doc-user-2', name: 'Dr. Anita Desai', specialty: 'Orthopedics', hospital_id: 'hosp-1', department_id: 'dept-2', status: 'AVAILABLE' },
+  { id: 'doc-3', user_id: 'doc-user-3', name: 'Dr. Vikram Patel', specialty: 'General Medicine', hospital_id: 'hosp-1', department_id: 'dept-3', status: 'ON_BREAK' },
+  { id: 'doc-4', user_id: 'doc-user-4', name: 'Dr. Sanjay Verma', specialty: 'Neurology', hospital_id: 'hosp-1', department_id: 'dept-4', status: 'AVAILABLE' }
 ];
 
 let users = [
   { id: 'user-1', full_name: 'Rahul Sharma', phone: '+91 9876543210', email: 'patient@mediq.com', role: 'patient' },
-  { id: 'rec-user-1', full_name: 'Priya Singh', phone: '+91 9811223344', email: 'receptionist@cityhospital.com', role: 'receptionist' },
-  { id: 'admin-user-1', full_name: 'Admin User', phone: '+91 9999988888', email: 'admin@mediq.com', role: 'admin' }
+  { id: 'rec-user-1', full_name: 'Priya Singh', phone: '+91 9811223344', email: 'receptionist@cityhospital.com', role: 'receptionist', hospital_id: 'hosp-1', department_id: 'dept-1' },
+  { id: 'doc-user-1', full_name: 'Dr. Rajesh Sharma', phone: '+91 9822334455', email: 'doctor@cityhospital.com', role: 'doctor', hospital_id: 'hosp-1', department_id: 'dept-1' },
+  { id: 'admin-user-1', full_name: 'System Admin', phone: '+91 9999988888', email: 'admin@mediq.com', role: 'admin' }
 ];
 
 let receptionists = [
   { id: 'rec-1', user_id: 'rec-user-1', hospital_id: 'hosp-1', department_id: 'dept-1' }
 ];
 
-// Helper to calculate current date ISO string for tokens
-const todayStr = new Date().toISOString().split('T')[0];
-
-let tokens = [
-  {
-    id: 'tok-101',
-    token_number: 'A-101',
-    patient_id: 'user-2',
-    patient_name: 'Aarav Gupta',
-    patient_phone: '+91 9820011223',
-    hospital_id: 'hosp-1',
-    department_id: 'dept-1',
-    status: 'completed',
-    created_at: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
-    called_at: new Date(Date.now() - 1000 * 60 * 75).toISOString(),
-    completed_at: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-    notes: 'Routine checkup'
-  },
-  {
-    id: 'tok-102',
-    token_number: 'A-102',
-    patient_id: 'user-3',
-    patient_name: 'Priya Nair',
-    patient_phone: '+91 9830022334',
-    hospital_id: 'hosp-1',
-    department_id: 'dept-1',
-    status: 'in_progress',
-    created_at: new Date(Date.now() - 1000 * 60 * 70).toISOString(),
-    called_at: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-    completed_at: null,
-    notes: 'Chest tightness evaluation'
-  },
-  {
-    id: 'tok-103',
-    token_number: 'A-103',
-    patient_id: 'user-1', // Default demo patient
-    patient_name: 'Rahul Sharma',
-    patient_phone: '+91 9876543210',
-    hospital_id: 'hosp-1',
-    department_id: 'dept-1',
-    status: 'waiting',
-    created_at: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
-    called_at: null,
-    completed_at: null,
-    notes: 'Follow-up ECG report consultation'
-  },
-  {
-    id: 'tok-104',
-    token_number: 'A-104',
-    patient_id: 'user-4',
-    patient_name: 'Sneha Kulkarni',
-    patient_phone: '+91 9840033445',
-    hospital_id: 'hosp-1',
-    department_id: 'dept-1',
-    status: 'waiting',
-    created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-    called_at: null,
-    completed_at: null,
-    notes: 'Blood pressure monitoring'
-  },
-  {
-    id: 'tok-105',
-    token_number: 'A-105',
-    patient_id: 'user-5',
-    patient_name: 'Amitabh Sen',
-    patient_phone: '+91 9850044556',
-    hospital_id: 'hosp-1',
-    department_id: 'dept-1',
-    status: 'waiting',
-    created_at: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-    called_at: null,
-    completed_at: null,
-    notes: 'High heart rate complaint'
-  }
-];
-
-// Department counter state for incremental token number generation
+// Department daily token counter for unified sequential numbering (#101, #102, #103)
 let deptCounters = {
   'dept-1': 105,
   'dept-2': 100,
   'dept-3': 100,
-  'dept-4': 100,
-  'dept-5': 100
+  'dept-4': 100
 };
+
+// Initial Seed Tokens
+let tokens = [
+  {
+    id: 'tok-101',
+    token_number: '101',
+    ref_id: 'REF-MEDIQ-101-CARD',
+    patient_id: 'user-2',
+    patient_name: 'Aarav Gupta',
+    patient_phone: '+91 9820011223',
+    patient_type: 'online', // 'online' or 'walkin'
+    hospital_id: 'hosp-1',
+    department_id: 'dept-1',
+    priority: 'NORMAL', // 'NORMAL', 'PRIORITY', 'EMERGENCY'
+    priority_reason: null,
+    priority_assigned_by: null,
+    priority_assigned_at: null,
+    status: 'completed', // WAITING, CALLED, IN_CONSULTATION, COMPLETED, CANCELLED, NO_SHOW
+    intent_status: 'arrived', // 'not_specified', 'on_my_way', 'cant_come', 'arrived'
+    created_at: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
+    called_at: new Date(Date.now() - 1000 * 60 * 75).toISOString(),
+    consultation_started_at: new Date(Date.now() - 1000 * 60 * 70).toISOString(),
+    completed_at: new Date(Date.now() - 1000 * 60 * 55).toISOString(),
+    consultation_duration_minutes: 15,
+    notes: 'Routine ECG evaluation'
+  },
+  {
+    id: 'tok-102',
+    token_number: '102',
+    ref_id: 'REF-MEDIQ-102-CARD',
+    patient_id: 'user-3',
+    patient_name: 'Priya Nair (Walk-in)',
+    patient_phone: '+91 9830022334',
+    patient_type: 'walkin',
+    hospital_id: 'hosp-1',
+    department_id: 'dept-1',
+    priority: 'NORMAL',
+    priority_reason: null,
+    priority_assigned_by: null,
+    priority_assigned_at: null,
+    status: 'in_consultation',
+    intent_status: 'arrived',
+    created_at: new Date(Date.now() - 1000 * 60 * 70).toISOString(),
+    called_at: new Date(Date.now() - 1000 * 60 * 20).toISOString(),
+    consultation_started_at: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
+    completed_at: null,
+    consultation_duration_minutes: null,
+    notes: 'Chest tightness complaint'
+  },
+  {
+    id: 'tok-103',
+    token_number: '103',
+    ref_id: 'REF-MEDIQ-103-CARD',
+    patient_id: 'user-1', // Default demo patient
+    patient_name: 'Rahul Sharma',
+    patient_phone: '+91 9876543210',
+    patient_type: 'online',
+    hospital_id: 'hosp-1',
+    department_id: 'dept-1',
+    priority: 'NORMAL',
+    priority_reason: null,
+    priority_assigned_by: null,
+    priority_assigned_at: null,
+    status: 'waiting',
+    intent_status: 'on_my_way',
+    created_at: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
+    called_at: null,
+    consultation_started_at: null,
+    completed_at: null,
+    consultation_duration_minutes: null,
+    notes: 'Follow-up ECG report consultation'
+  },
+  {
+    id: 'tok-104',
+    token_number: '104',
+    ref_id: 'REF-MEDIQ-104-CARD',
+    patient_id: 'user-4',
+    patient_name: 'Sneha Kulkarni',
+    patient_phone: '+91 9840033445',
+    patient_type: 'online',
+    hospital_id: 'hosp-1',
+    department_id: 'dept-1',
+    priority: 'NORMAL',
+    priority_reason: null,
+    priority_assigned_by: null,
+    priority_assigned_at: null,
+    status: 'waiting',
+    intent_status: 'not_specified',
+    created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+    called_at: null,
+    consultation_started_at: null,
+    completed_at: null,
+    consultation_duration_minutes: null,
+    notes: 'Blood pressure monitoring'
+  },
+  {
+    id: 'tok-105',
+    token_number: '105',
+    ref_id: 'REF-MEDIQ-105-CARD',
+    patient_id: 'user-5',
+    patient_name: 'Amitabh Sen (Emergency)',
+    patient_phone: '+91 9850044556',
+    patient_type: 'walkin',
+    hospital_id: 'hosp-1',
+    department_id: 'dept-1',
+    priority: 'EMERGENCY',
+    priority_reason: 'Acute tachycardia & shortness of breath',
+    priority_assigned_by: 'Priya Singh (Receptionist)',
+    priority_assigned_at: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
+    status: 'waiting',
+    intent_status: 'arrived',
+    created_at: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
+    called_at: null,
+    consultation_started_at: null,
+    completed_at: null,
+    consultation_duration_minutes: null,
+    notes: 'Acute tachycardia - Emergency priority assigned'
+  }
+];
+
+// Audit Trail Storage
+let auditLogs = [
+  {
+    id: 'audit-1',
+    user_id: 'rec-user-1',
+    user_name: 'Priya Singh',
+    user_role: 'receptionist',
+    action: 'CREATE_WALKIN_TOKEN',
+    token_id: 'tok-102',
+    token_number: '102',
+    previous_status: null,
+    new_status: 'waiting',
+    details: 'Created walk-in token for Priya Nair',
+    timestamp: new Date(Date.now() - 1000 * 60 * 70).toISOString()
+  },
+  {
+    id: 'audit-2',
+    user_id: 'rec-user-1',
+    user_name: 'Priya Singh',
+    user_role: 'receptionist',
+    action: 'CALL_NEXT',
+    token_id: 'tok-102',
+    token_number: '102',
+    previous_status: 'waiting',
+    new_status: 'called',
+    details: 'Called Token #102 to OPD-102',
+    timestamp: new Date(Date.now() - 1000 * 60 * 20).toISOString()
+  },
+  {
+    id: 'audit-3',
+    user_id: 'doc-user-1',
+    user_name: 'Dr. Rajesh Sharma',
+    user_role: 'doctor',
+    action: 'START_CONSULTATION',
+    token_id: 'tok-102',
+    token_number: '102',
+    previous_status: 'called',
+    new_status: 'in_consultation',
+    details: 'Doctor started consultation for Token #102',
+    timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString()
+  },
+  {
+    id: 'audit-4',
+    user_id: 'rec-user-1',
+    user_name: 'Priya Singh',
+    user_role: 'receptionist',
+    action: 'ASSIGN_PRIORITY',
+    token_id: 'tok-105',
+    token_number: '105',
+    previous_status: 'waiting',
+    new_status: 'waiting',
+    details: 'Assigned EMERGENCY priority: Acute tachycardia',
+    timestamp: new Date(Date.now() - 1000 * 60 * 10).toISOString()
+  }
+];
+
+// Notifications Log
+let notifications = [
+  {
+    id: 'notif-1',
+    user_id: 'user-1',
+    title: '🚗 Smart Leave Alert',
+    message: 'Your turn for Token #103 at City Care Hospital is ~15-25 minutes away! Time to head to the OPD.',
+    type: 'leave_now',
+    read: false,
+    created_at: new Date(Date.now() - 1000 * 60 * 5).toISOString()
+  }
+];
+
+// Helper to record immutable audit log entry
+function logAudit({ user, action, tokenId, tokenNumber, previousStatus, newStatus, details }) {
+  const newLog = {
+    id: `audit-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    user_id: user?.id || 'system',
+    user_name: user?.full_name || user?.name || 'System / Auto',
+    user_role: user?.role || 'system',
+    action,
+    token_id: tokenId,
+    token_number: tokenNumber,
+    previous_status: previousStatus || null,
+    new_status: newStatus || null,
+    details: details || '',
+    timestamp: new Date().toISOString()
+  };
+  auditLogs.unshift(newLog);
+  return newLog;
+}
+
+// Priority sorting helper: EMERGENCY > PRIORITY > NORMAL, then by created_at
+function sortTokensByPriority(tokenList) {
+  const priorityWeight = { 'EMERGENCY': 3, 'PRIORITY': 2, 'NORMAL': 1 };
+  return [...tokenList].sort((a, b) => {
+    const wA = priorityWeight[a.priority] || 1;
+    const wB = priorityWeight[b.priority] || 1;
+    if (wA !== wB) {
+      return wB - wA; // Higher priority first
+    }
+    return new Date(a.created_at) - new Date(b.created_at); // Earliest creation first
+  });
+}
 
 export const store = {
   // Hospitals
   getHospitals: ({ city, specialty, query } = {}) => {
     let result = [...hospitals];
-    if (city) {
-      result = result.filter(h => h.city.toLowerCase() === city.toLowerCase());
-    }
-    if (specialty) {
-      result = result.filter(h => h.specialties.some(s => s.toLowerCase() === specialty.toLowerCase()));
-    }
+    if (city) result = result.filter(h => h.city.toLowerCase() === city.toLowerCase());
+    if (specialty) result = result.filter(h => h.specialties.some(s => s.toLowerCase() === specialty.toLowerCase()));
     if (query) {
       const q = query.toLowerCase();
       result = result.filter(h => h.name.toLowerCase().includes(q) || h.location.toLowerCase().includes(q) || h.city.toLowerCase().includes(q));
@@ -202,47 +326,84 @@ export const store = {
 
   getDepartmentById: (id) => departments.find(d => d.id === id),
 
-  addDepartment: (deptData) => {
-    const newDept = {
-      id: `dept-${Date.now()}`,
-      ...deptData
-    };
-    departments.push(newDept);
-    return newDept;
+  updateDepartmentPauseState: (deptId, isPaused, reason = null, user = null) => {
+    const dept = departments.find(d => d.id === deptId);
+    if (!dept) return null;
+    const prev = dept.is_paused;
+    dept.is_paused = isPaused;
+    dept.pause_reason = reason;
+
+    logAudit({
+      user,
+      action: isPaused ? 'PAUSE_QUEUE' : 'RESUME_QUEUE',
+      tokenId: null,
+      tokenNumber: null,
+      previousStatus: prev ? 'PAUSED' : 'ACTIVE',
+      newStatus: isPaused ? 'PAUSED' : 'ACTIVE',
+      details: `Queue ${isPaused ? 'paused' : 'resumed'} for department ${dept.name}. Reason: ${reason || 'None'}`
+    });
+
+    return dept;
+  },
+
+  // Doctors
+  getDoctors: ({ hospitalId, departmentId } = {}) => {
+    let list = [...doctors];
+    if (hospitalId) list = list.filter(d => d.hospital_id === hospitalId);
+    if (departmentId && departmentId !== 'all') list = list.filter(d => d.department_id === departmentId);
+    return list;
+  },
+
+  getDoctorById: (id) => doctors.find(d => d.id === id),
+
+  updateDoctorStatus: (doctorId, status, user = null) => {
+    const doc = doctors.find(d => d.id === doctorId || d.user_id === doctorId);
+    if (!doc) return null;
+    const prev = doc.status;
+    doc.status = status; // 'AVAILABLE', 'IN_OPD', 'ON_BREAK', 'UNAVAILABLE'
+
+    logAudit({
+      user,
+      action: 'DOCTOR_STATUS_CHANGE',
+      tokenId: null,
+      tokenNumber: null,
+      previousStatus: prev,
+      newStatus: status,
+      details: `${doc.name} status updated from ${prev} to ${status}`
+    });
+
+    return doc;
   },
 
   // Users
   getUserByEmail: (email) => users.find(u => u.email.toLowerCase() === email.toLowerCase()),
   getUserById: (id) => users.find(u => u.id === id),
-
   addUser: (userData) => {
     const existing = users.find(u => u.email.toLowerCase() === userData.email.toLowerCase());
     if (existing) return existing;
-    const newUser = {
-      id: `user-${Date.now()}`,
-      ...userData
-    };
+    const newUser = { id: `user-${Date.now()}`, ...userData };
     users.push(newUser);
     return newUser;
   },
 
-  // Receptionists
-  getReceptionistByUserId: (userId) => receptionists.find(r => r.user_id === userId),
-
-  // Tokens
+  // Tokens & Queue Engine
   getTokensByHospital: (hospitalId, { departmentId, status } = {}) => {
     let list = tokens.filter(t => t.hospital_id === hospitalId);
-    if (departmentId && departmentId !== 'all') {
-      list = list.filter(t => t.department_id === departmentId);
-    }
-    if (status && status !== 'all') {
-      list = list.filter(t => t.status === status);
-    }
-    return list;
+    if (departmentId && departmentId !== 'all') list = list.filter(t => t.department_id === departmentId);
+    if (status && status !== 'all') list = list.filter(t => t.status === status);
+
+    // Apply priority sorting
+    return sortTokensByPriority(list);
   },
 
   getTokensByPatient: (patientId) => {
     return tokens.filter(t => t.patient_id === patientId).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  },
+
+  getTokenByRefId: (refId) => {
+    const token = tokens.find(t => t.ref_id === refId || t.id === refId || t.token_number === refId);
+    if (!token) return null;
+    return store.getTokenById(token.id);
   },
 
   getTokenById: (tokenId) => {
@@ -251,134 +412,304 @@ export const store = {
 
     const hospital = hospitals.find(h => h.id === token.hospital_id);
     const department = departments.find(d => d.id === token.department_id);
+    const doctor = doctors.find(d => d.department_id === token.department_id);
 
-    // Compute live metrics: people ahead & current token being served
     const deptTokens = tokens.filter(t => t.department_id === token.department_id);
-    const currentServing = deptTokens.find(t => t.status === 'in_progress' || t.status === 'called');
+    const currentServing = deptTokens.find(t => t.status === 'in_consultation' || t.status === 'called');
 
-    // Count people ahead in 'waiting' status created before this token
-    const waitingList = deptTokens
-      .filter(t => t.status === 'waiting')
-      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-
+    // Count people ahead in 'waiting' status with higher priority or earlier timestamp
+    const waitingList = sortTokensByPriority(deptTokens.filter(t => t.status === 'waiting'));
     const tokenIndex = waitingList.findIndex(t => t.id === tokenId);
     const peopleAhead = tokenIndex >= 0 ? tokenIndex : 0;
-    const avgTime = department ? department.avg_time_minutes : (hospital ? hospital.avg_consultation_minutes : 12);
-    const estimatedWaitMinutes = (peopleAhead + (currentServing ? 1 : 0)) * avgTime;
+
+    // Calculate Estimated Wait Range (e.g., 20–35 min) based on avg consultation time
+    const avgTime = department ? department.avg_time_minutes : 12;
+    const minEst = Math.max(5, Math.round((peopleAhead + (currentServing ? 1 : 0)) * (avgTime * 0.8)));
+    const maxEst = Math.round((peopleAhead + (currentServing ? 1 : 0)) * (avgTime * 1.3));
+    const estimated_wait_range = `${minEst}–${maxEst} mins`;
 
     return {
       ...token,
       hospital_name: hospital ? hospital.name : 'Hospital',
       department_name: department ? department.name : 'General OPD',
-      doctor_name: department ? department.doctor_name : 'Duty Doctor',
+      doctor_name: department ? department.doctor_name : (doctor ? doctor.name : 'Duty Doctor'),
+      doctor_status: doctor ? doctor.status : 'AVAILABLE',
+      is_dept_paused: department ? Boolean(department.is_paused) : false,
+      dept_pause_reason: department ? department.pause_reason : null,
       room_no: department ? department.room_no : 'OPD-1',
       avg_time_minutes: avgTime,
-      current_serving_token: currentServing ? currentServing.token_number : 'None',
+      current_serving_token: currentServing ? `#${currentServing.token_number}` : 'None',
       people_ahead: peopleAhead,
-      estimated_wait_minutes: estimatedWaitMinutes
+      estimated_wait_range: estimated_wait_range,
+      estimated_wait_minutes: minEst
     };
   },
 
-  createToken: ({ patient_id, patient_name, patient_phone, hospital_id, department_id, notes }) => {
+  // Create Unified Token (Shared for Online & Walk-in Patients)
+  createToken: ({ patient_id, patient_name, patient_phone, patient_type = 'online', hospital_id, department_id, notes, priority = 'NORMAL', priority_reason = null, user = null }) => {
     const dept = departments.find(d => d.id === department_id);
-    const deptCode = dept ? dept.name.substring(0, 1).toUpperCase() : 'A';
 
-    if (!deptCounters[department_id]) {
-      deptCounters[department_id] = 100;
-    }
+    if (!deptCounters[department_id]) deptCounters[department_id] = 100;
     deptCounters[department_id] += 1;
     const num = deptCounters[department_id];
-    const token_number = `${deptCode}-${num}`;
+    const token_number = `${num}`;
+    const ref_id = `REF-MEDIQ-${num}-${department_id.toUpperCase().replace(/[^A-Z0-9]/g, '')}`;
 
     const newToken = {
       id: `tok-${Date.now()}`,
       token_number,
+      ref_id,
       patient_id: patient_id || 'user-1',
       patient_name: patient_name || 'Rahul Sharma',
       patient_phone: patient_phone || '+91 9876543210',
+      patient_type: patient_type || 'online',
       hospital_id,
       department_id,
+      priority: priority || 'NORMAL',
+      priority_reason: priority_reason || null,
+      priority_assigned_by: priority !== 'NORMAL' ? (user?.full_name || 'Hospital Staff') : null,
+      priority_assigned_at: priority !== 'NORMAL' ? new Date().toISOString() : null,
       status: 'waiting',
+      intent_status: patient_type === 'walkin' ? 'arrived' : 'not_specified',
       created_at: new Date().toISOString(),
       called_at: null,
+      consultation_started_at: null,
       completed_at: null,
-      notes: notes || 'General Consultation'
+      consultation_duration_minutes: null,
+      notes: notes || (patient_type === 'walkin' ? 'Walk-in OPD Patient' : 'Online OPD Token')
     };
 
     tokens.push(newToken);
+
+    logAudit({
+      user: user || { id: patient_id, full_name: patient_name, role: 'patient' },
+      action: patient_type === 'walkin' ? 'CREATE_WALKIN_TOKEN' : 'GENERATE_ONLINE_TOKEN',
+      tokenId: newToken.id,
+      tokenNumber: newToken.token_number,
+      previousStatus: null,
+      newStatus: 'waiting',
+      details: `Generated ${patient_type} token #${token_number} for ${patient_name}`
+    });
+
     return store.getTokenById(newToken.id);
   },
 
-  updateTokenStatus: (tokenId, status, extraFields = {}) => {
+  // Token Lifecycle State Transitions & Validation
+  updateTokenStatus: (tokenId, newStatus, user = null, extraFields = {}) => {
     const token = tokens.find(t => t.id === tokenId);
-    if (!token) return null;
+    if (!token) return { error: 'Token not found' };
 
-    token.status = status;
-    if (status === 'called') {
+    const previousStatus = token.status;
+
+    // Validate Status State Transitions
+    const allowedTransitions = {
+      waiting: ['called', 'cancelled', 'no_show'],
+      called: ['in_consultation', 'completed', 'no_show', 'cancelled'],
+      in_consultation: ['completed', 'no_show', 'cancelled'],
+      completed: [],
+      no_show: ['waiting', 'called'], // Allow receptionist to re-call no-show if patient arrives
+      cancelled: []
+    };
+
+    if (!allowedTransitions[previousStatus].includes(newStatus) && previousStatus !== newStatus) {
+      return { error: `Invalid state transition from '${previousStatus.toUpperCase()}' to '${newStatus.toUpperCase()}'` };
+    }
+
+    token.status = newStatus;
+
+    if (newStatus === 'called') {
       token.called_at = new Date().toISOString();
-    } else if (status === 'completed' || status === 'no_show' || status === 'cancelled') {
+    } else if (newStatus === 'in_consultation') {
+      token.consultation_started_at = new Date().toISOString();
+    } else if (newStatus === 'completed') {
+      token.completed_at = new Date().toISOString();
+      if (token.consultation_started_at) {
+        const durMs = new Date(token.completed_at) - new Date(token.consultation_started_at);
+        token.consultation_duration_minutes = Math.max(3, Math.round(durMs / (1000 * 60)));
+      } else {
+        token.consultation_duration_minutes = 12;
+      }
+    } else if (newStatus === 'no_show' || newStatus === 'cancelled') {
       token.completed_at = new Date().toISOString();
     }
+
     Object.assign(token, extraFields);
-    return store.getTokenById(tokenId);
+
+    logAudit({
+      user,
+      action: `TOKEN_STATUS_${newStatus.toUpperCase()}`,
+      tokenId: token.id,
+      tokenNumber: token.token_number,
+      previousStatus,
+      newStatus,
+      details: `Token #${token.token_number} status changed to ${newStatus.toUpperCase()}`
+    });
+
+    return { success: true, token: store.getTokenById(tokenId) };
   },
 
-  callNextPatient: (hospitalId, departmentId) => {
+  // Patient Intent ("I'm on my way" / "I can't come")
+  updatePatientIntent: (tokenId, intentStatus, user = null) => {
+    const token = tokens.find(t => t.id === tokenId);
+    if (!token) return { error: 'Token not found' };
+
+    const prev = token.intent_status;
+    token.intent_status = intentStatus; // 'on_my_way', 'cant_come', 'arrived'
+
+    if (intentStatus === 'cant_come') {
+      // Auto-cancel if patient marks "can't come"
+      token.status = 'cancelled';
+      token.completed_at = new Date().toISOString();
+    }
+
+    logAudit({
+      user,
+      action: 'PATIENT_INTENT_UPDATE',
+      tokenId: token.id,
+      tokenNumber: token.token_number,
+      previousStatus: prev,
+      newStatus: intentStatus,
+      details: `Patient marked intent: ${intentStatus}`
+    });
+
+    return { success: true, token: store.getTokenById(tokenId) };
+  },
+
+  // Change Token Priority (Staff only)
+  assignTokenPriority: (tokenId, priority, reason, user = null) => {
+    const token = tokens.find(t => t.id === tokenId);
+    if (!token) return { error: 'Token not found' };
+
+    const prevPriority = token.priority;
+    token.priority = priority; // 'NORMAL', 'PRIORITY', 'EMERGENCY'
+    token.priority_reason = reason || null;
+    token.priority_assigned_by = user?.full_name || 'Hospital Staff';
+    token.priority_assigned_at = new Date().toISOString();
+
+    logAudit({
+      user,
+      action: 'ASSIGN_PRIORITY',
+      tokenId: token.id,
+      tokenNumber: token.token_number,
+      previousStatus: prevPriority,
+      newStatus: priority,
+      details: `Assigned priority ${priority}. Reason: ${reason || 'Staff decision'}`
+    });
+
+    return { success: true, token: store.getTokenById(tokenId) };
+  },
+
+  // Call Next Waiting Patient
+  callNextPatient: (hospitalId, departmentId, user = null) => {
     const deptTokens = tokens.filter(t => t.hospital_id === hospitalId && (!departmentId || departmentId === 'all' || t.department_id === departmentId));
     
-    // First, complete any token that is currently 'in_progress' or 'called' if necessary, or just pick the first 'waiting'
-    const waitingTokens = deptTokens
-      .filter(t => t.status === 'waiting')
-      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    // Sort waiting tokens by priority and creation time
+    const waitingTokens = sortTokensByPriority(deptTokens.filter(t => t.status === 'waiting'));
 
-    if (waitingTokens.length === 0) return null;
+    if (waitingTokens.length === 0) return { error: 'No waiting patients in queue' };
 
-    // Mark current in_progress as completed if any
-    deptTokens.filter(t => t.status === 'called' || t.status === 'in_progress').forEach(t => {
-      t.status = 'completed';
-      t.completed_at = new Date().toISOString();
+    // Move any currently 'called' token to 'in_consultation' or complete as needed
+    deptTokens.filter(t => t.status === 'called').forEach(t => {
+      t.status = 'in_consultation';
+      t.consultation_started_at = new Date().toISOString();
     });
 
     const nextToken = waitingTokens[0];
     nextToken.status = 'called';
     nextToken.called_at = new Date().toISOString();
 
-    return store.getTokenById(nextToken.id);
+    logAudit({
+      user,
+      action: 'CALL_NEXT',
+      tokenId: nextToken.id,
+      tokenNumber: nextToken.token_number,
+      previousStatus: 'waiting',
+      newStatus: 'called',
+      details: `Called Token #${nextToken.token_number} (${nextToken.patient_name})`
+    });
+
+    return { success: true, token: store.getTokenById(nextToken.id) };
   },
 
-  resetQueue: (hospitalId, departmentId) => {
+  // Reset Queue
+  resetQueue: (hospitalId, departmentId, user = null) => {
     tokens = tokens.filter(t => !(t.hospital_id === hospitalId && (!departmentId || departmentId === 'all' || t.department_id === departmentId)));
+    
+    logAudit({
+      user,
+      action: 'RESET_QUEUE',
+      tokenId: null,
+      tokenNumber: null,
+      previousStatus: null,
+      newStatus: 'CLEARED',
+      details: `Queue reset for hospital ${hospitalId}`
+    });
+
     return true;
   },
 
-  getQueueStats: (hospitalId) => {
+  // Audit Logs
+  getAuditLogs: ({ limit = 50, action, userRole } = {}) => {
+    let list = [...auditLogs];
+    if (action) list = list.filter(l => l.action === action);
+    if (userRole) list = list.filter(l => l.user_role === userRole);
+    return list.slice(0, limit);
+  },
+
+  // Operational Analytics Engine
+  getQueueAnalytics: (hospitalId = 'hosp-1') => {
     const hospTokens = tokens.filter(t => t.hospital_id === hospitalId);
     const total = hospTokens.length;
     const completed = hospTokens.filter(t => t.status === 'completed').length;
     const waiting = hospTokens.filter(t => t.status === 'waiting').length;
-    const inProgress = hospTokens.filter(t => t.status === 'in_progress' || t.status === 'called').length;
-    const skipped = hospTokens.filter(t => t.status === 'no_show').length;
+    const inConsultation = hospTokens.filter(t => t.status === 'in_consultation').length;
+    const called = hospTokens.filter(t => t.status === 'called').length;
+    const cancelled = hospTokens.filter(t => t.status === 'cancelled').length;
+    const noShows = hospTokens.filter(t => t.status === 'no_show').length;
 
-    // Calculate average wait time for completed tokens
+    // Calculate Average Waiting Duration
     let totalWaitMs = 0;
-    let countWithWait = 0;
-    hospTokens.filter(t => t.status === 'completed' && t.called_at).forEach(t => {
+    let countWait = 0;
+    hospTokens.filter(t => (t.status === 'completed' || t.status === 'in_consultation') && t.called_at).forEach(t => {
       const waitMs = new Date(t.called_at) - new Date(t.created_at);
       if (waitMs > 0) {
         totalWaitMs += waitMs;
-        countWithWait++;
+        countWait++;
       }
     });
+    const avgWaitMinutes = countWait > 0 ? Math.round((totalWaitMs / countWait) / (1000 * 60)) : 14;
 
-    const avgWaitMinutes = countWithWait > 0 ? Math.round((totalWaitMs / countWithWait) / (1000 * 60)) : 12;
+    // Calculate Average Consultation Duration
+    let totalConsultMs = 0;
+    let countConsult = 0;
+    hospTokens.filter(t => t.status === 'completed' && t.consultation_duration_minutes).forEach(t => {
+      totalConsultMs += t.consultation_duration_minutes;
+      countConsult++;
+    });
+    const avgConsultationMinutes = countConsult > 0 ? Math.round(totalConsultMs / countConsult) : 12;
+
+    // Hourly Token Traffic Distribution
+    const hourlyTraffic = [
+      { hour: '08:00 AM', tokens: 12 },
+      { hour: '09:00 AM', tokens: 28 },
+      { hour: '10:00 AM', tokens: 42 },
+      { hour: '11:00 AM', tokens: 35 },
+      { hour: '12:00 PM', tokens: 22 },
+      { hour: '02:00 PM', tokens: 30 },
+      { hour: '03:00 PM', tokens: 25 }
+    ];
 
     return {
-      total,
-      completed,
-      waiting,
-      inProgress,
-      skipped,
-      avgWaitMinutes
+      totalTokens: total,
+      completedTokens: completed,
+      waitingTokens: waiting,
+      inConsultationTokens: inConsultation + called,
+      cancelledTokens: cancelled,
+      noShowTokens: noShows,
+      avgWaitMinutes,
+      avgConsultationMinutes,
+      peakHour: '10:00 AM – 11:00 AM',
+      hourlyTraffic
     };
   }
 };

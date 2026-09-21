@@ -58,3 +58,6 @@ export const playChimeAlert = (type = 'call') => {
     console.warn('Audio alert unavailable:', err);
   }
 };
+
+export const playTokenChime = () => playChimeAlert('call');
+export const playEmergencyAlert = () => playChimeAlert('alert');
