@@ -24,6 +24,7 @@ router.get('/ref/:refId', getTokenByRef);
 router.get('/:id', getTokenById);
 
 // Token State Machine & Intent Actions
+router.patch('/next/call', authenticateUser, requireRole(['receptionist', 'doctor', 'admin']), callNextToken);
 router.patch('/:id/call', authenticateUser, requireRole(['receptionist', 'doctor', 'admin']), callNextToken);
 router.patch('/:id/start-consultation', authenticateUser, requireRole(['receptionist', 'doctor', 'admin']), startConsultation);
 router.patch('/:id/complete', authenticateUser, requireRole(['receptionist', 'doctor', 'admin']), completeToken);

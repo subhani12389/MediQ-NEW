@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { apiFetch } from '../lib/api';
 import { 
   Search, 
   MapPin, 
@@ -36,7 +37,7 @@ export default function HospitalSearch() {
       if (selectedCity !== 'All') url += `city=${encodeURIComponent(selectedCity)}&`;
       if (selectedSpecialty !== 'All') url += `specialty=${encodeURIComponent(selectedSpecialty)}&`;
       
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       if (res.ok) {
         const data = await res.json();
         setHospitals(data);

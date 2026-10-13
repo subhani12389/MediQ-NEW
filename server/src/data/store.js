@@ -1,4 +1,5 @@
 // Production-Grade In-Memory Data Store & Queue Management Engine
+import { supabase, isSupabaseConfigured } from '../config/supabaseClient.js';
 
 let hospitals = [
   {
@@ -454,7 +455,11 @@ export const store = {
     return doc;
   },
 
+  // Receptionists
+  getReceptionistByUserId: (userId) => receptionists.find(r => r.user_id === userId || r.id === userId) || null,
+
   // Users
+  getAllUsers: () => [...users],
   getUserByEmail: (email) => users.find(u => u.email.toLowerCase() === email.toLowerCase()),
   getUserById: (id) => users.find(u => u.id === id),
   addUser: (userData) => {
@@ -462,7 +467,64 @@ export const store = {
     if (existing) return existing;
     const newUser = { id: `user-${Date.now()}`, ...userData };
     users.push(newUser);
+
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('users').upsert({
+        id: newUser.id,
+        full_name: newUser.full_name,
+        phone: newUser.phone,
+        email: newUser.email,
+        role: newUser.role
+      }).then(({ error }) => {
+        if (error) console.warn('Supabase user upsert sync error:', error.message);
+      });
+    }
+
     return newUser;
+  },
+  updateUserRole: (userId, role) => {
+    const user = users.find(u => u.id === userId);
+    if (!user) return null;
+    user.role = role;
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('users').update({ role }).eq('id', userId).then(({ error }) => {
+        if (error) console.warn('Supabase user role update sync error:', error.message);
+      });
+    }
+    return user;
+  },
+
+  // Doctors Management
+  addDoctor: (docData) => {
+    const newDoc = {
+      id: `doc-${Date.now()}`,
+      user_id: docData.user_id || `doc-user-${Date.now()}`,
+      name: docData.name,
+      specialty: docData.specialty || 'General Medicine',
+      hospital_id: docData.hospital_id || 'hosp-1',
+      department_id: docData.department_id || 'dept-1',
+      status: 'AVAILABLE'
+    };
+    doctors.push(newDoc);
+    return newDoc;
+  },
+
+  // Departments Management
+  getAllDepartments: () => [...departments],
+  addDepartment: (deptData) => {
+    const newDept = {
+      id: `dept-${Date.now()}`,
+      hospital_id: deptData.hospital_id || 'hosp-1',
+      name: deptData.name,
+      doctor_id: deptData.doctor_id || null,
+      doctor_name: deptData.doctor_name || 'Duty Doctor',
+      avg_time_minutes: parseInt(deptData.avg_time_minutes) || 15,
+      room_no: deptData.room_no || 'OPD-101',
+      is_paused: false,
+      pause_reason: null
+    };
+    departments.push(newDept);
+    return newDept;
   },
 
   // Tokens & Queue Engine
@@ -560,6 +622,20 @@ export const store = {
 
     tokens.push(newToken);
 
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('tokens').insert({
+        token_number: newToken.token_number,
+        patient_id: newToken.patient_id,
+        hospital_id: newToken.hospital_id,
+        department_id: newToken.department_id,
+        status: newToken.status,
+        notes: newToken.notes,
+        created_at: newToken.created_at
+      }).then(({ error }) => {
+        if (error) console.warn('Supabase token insert sync error:', error.message);
+      });
+    }
+
     logAudit({
       user: user || { id: patient_id, full_name: patient_name, role: 'patient' },
       action: patient_type === 'walkin' ? 'CREATE_WALKIN_TOKEN' : 'GENERATE_ONLINE_TOKEN',
@@ -623,6 +699,16 @@ export const store = {
       newStatus,
       details: `Token #${token.token_number} status changed to ${newStatus.toUpperCase()}`
     });
+
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('tokens').update({
+        status: newStatus,
+        called_at: token.called_at,
+        completed_at: token.completed_at
+      }).eq('token_number', token.token_number).then(({ error }) => {
+        if (error) console.warn('Supabase token update sync error:', error.message);
+      });
+    }
 
     return { success: true, token: store.getTokenById(tokenId) };
   },
@@ -889,6 +975,30 @@ export const store = {
     // Optionally complete token if linked
     if (queue_token_id) {
       store.updateTokenStatus(queue_token_id, 'completed', user);
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('consultations').insert({
+        patient_id: newConsultation.patient_id,
+        doctor_id: newConsultation.doctor_id,
+        doctor_name: newConsultation.doctor_name,
+        queue_token_id: newConsultation.queue_token_id,
+        department_id: newConsultation.department_id,
+        department_name: newConsultation.department_name,
+        hospital_id: newConsultation.hospital_id,
+        hospital_name: newConsultation.hospital_name,
+        chief_complaint: newConsultation.chief_complaint,
+        symptoms: newConsultation.symptoms,
+        observations: newConsultation.observations,
+        diagnosis: newConsultation.diagnosis,
+        treatment_advice: newConsultation.treatment_advice,
+        prescription_notes: newConsultation.prescription_notes,
+        follow_up_instructions: newConsultation.follow_up_instructions,
+        additional_remarks: newConsultation.additional_remarks,
+        visit_date: newConsultation.visit_date
+      }).then(({ error }) => {
+        if (error) console.warn('Supabase consultation insert sync error:', error.message);
+      });
     }
 
     return newConsultation;

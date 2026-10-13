@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useQueue } from '../context/QueueContext';
+import { apiFetch } from '../lib/api';
 import { 
   History, 
   Hospital, 
@@ -32,7 +33,7 @@ export default function PatientHistory() {
     setLoading(true);
     try {
       const patientId = user?.id || 'user-1';
-      const res = await fetch(`/api/tokens/patient/${patientId}`);
+      const res = await apiFetch(`/api/tokens/patient/${patientId}`);
       if (res.ok) {
         const data = await res.json();
         setTokens(data);

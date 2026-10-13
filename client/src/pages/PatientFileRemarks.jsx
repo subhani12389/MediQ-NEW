@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useQueue } from '../context/QueueContext';
+import { apiFetch } from '../lib/api';
 
 export default function PatientFileRemarks() {
   const { patientId } = useParams();
@@ -42,7 +43,7 @@ export default function PatientFileRemarks() {
   const fetchPatientData = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/consultations/patient/${targetPatientId}`);
+      const res = await apiFetch(`/api/consultations/patient/${targetPatientId}`);
       if (res.ok) {
         const data = await res.json();
         setPatientFile(data.patient_file);
@@ -111,9 +112,8 @@ export default function PatientFileRemarks() {
         additional_remarks: additionalRemarks
       };
 
-      const res = await fetch('/api/consultations', {
+      const res = await apiFetch('/api/consultations', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
@@ -135,6 +135,9 @@ export default function PatientFileRemarks() {
         if (tokenIdParam) {
           await completeToken(tokenIdParam);
         }
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.error || 'Failed to save consultation remarks');
       }
     } catch (err) {
       alert('Error saving consultation: ' + err.message);

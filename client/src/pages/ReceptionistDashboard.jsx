@@ -4,6 +4,7 @@ import {
   Volume2, Search, QrCode, AlertTriangle, ShieldAlert, Sparkles, Phone, Clock, Navigation
 } from 'lucide-react';
 import { useQueue } from '../context/QueueContext';
+import { apiFetch } from '../lib/api';
 
 export default function ReceptionistDashboard() {
   const {
@@ -91,7 +92,7 @@ export default function ReceptionistDashboard() {
     e.preventDefault();
     if (!qrRefInput) return;
     try {
-      const res = await fetch(`/api/tokens/ref/${qrRefInput.trim()}`);
+      const res = await apiFetch(`/api/tokens/ref/${qrRefInput.trim()}`);
       if (res.ok) {
         const data = await res.json();
         setScannedTokenResult(data);

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useQueue } from '../context/QueueContext';
+import { apiFetch } from '../lib/api';
 import confetti from 'canvas-confetti';
 import { 
   Building2, 
@@ -45,8 +46,8 @@ export default function HospitalDetail() {
     setLoading(true);
     try {
       const [hospRes, deptRes] = await Promise.all([
-        fetch(`/api/hospitals/${id}`),
-        fetch(`/api/hospitals/${id}/departments`)
+        apiFetch(`/api/hospitals/${id}`),
+        apiFetch(`/api/hospitals/${id}/departments`)
       ]);
 
       if (hospRes.ok) {

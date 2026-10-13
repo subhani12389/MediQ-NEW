@@ -1,12 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { socket } from '../lib/socket';
+import { apiFetch } from '../lib/api';
+import { useAuth } from './AuthContext';
 import { playTokenChime, playEmergencyAlert } from '../utils/audioAlert';
 
 const QueueContext = createContext();
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:5000' : '');
-
 export const QueueProvider = ({ children }) => {
+  const { user } = useAuth();
+
   const [activeToken, setActiveToken] = useState(null);
   const [hospitalQueue, setHospitalQueue] = useState([]);
   const [queueStats, setQueueStats] = useState({
@@ -26,9 +28,10 @@ export const QueueProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   // Fetch Token Details
-  const fetchTokenStatus = useCallback(async (tokenId = 'tok-103') => {
+  const fetchTokenStatus = useCallback(async (tokenId) => {
+    if (!tokenId) return;
     try {
-      const res = await fetch(`${API_BASE}/api/tokens/${tokenId}`);
+      const res = await apiFetch(`/api/tokens/${tokenId}`);
       if (res.ok) {
         const data = await res.json();
         setActiveToken(data);
@@ -37,14 +40,14 @@ export const QueueProvider = ({ children }) => {
         setDoctorStatus(data.doctor_status || 'AVAILABLE');
       }
     } catch (err) {
-      console.warn('Backend fetch fallback:', err.message);
+      console.warn('Token status fetch error:', err.message);
     }
   }, []);
 
-  // Fetch Receptionist Queue
+  // Fetch Receptionist / Department Queue
   const fetchHospitalQueue = useCallback(async (hospitalId = 'hosp-1', departmentId = 'all', status = 'all') => {
     try {
-      const res = await fetch(`${API_BASE}/api/receptionist/${hospitalId}/queue?departmentId=${departmentId}&status=${status}`);
+      const res = await apiFetch(`/api/receptionist/${hospitalId}/queue?departmentId=${departmentId}&status=${status}`);
       if (res.ok) {
         const data = await res.json();
         setHospitalQueue(data.queue || []);
@@ -55,9 +58,56 @@ export const QueueProvider = ({ children }) => {
     }
   }, []);
 
+  // Select / Track Active Token
+  const selectActiveToken = useCallback((tokenId) => {
+    if (tokenId) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('mediq_active_token_id', tokenId);
+      }
+      fetchTokenStatus(tokenId);
+      socket.emit('join_token', tokenId);
+    }
+  }, [fetchTokenStatus]);
+
+  // Initial Load & Dynamic Resolution when User Changes
+  useEffect(() => {
+    const resolveActiveToken = async () => {
+      // 1. If user is logged in as a patient, check their live tokens
+      if (user && user.role === 'patient') {
+        try {
+          const res = await apiFetch(`/api/tokens/patient/${user.id}`);
+          if (res.ok) {
+            const userTokens = await res.json();
+            if (Array.isArray(userTokens) && userTokens.length > 0) {
+              // Find first waiting, called, or in_consultation token
+              const active = userTokens.find(t => ['waiting', 'called', 'in_consultation'].includes(t.status)) || userTokens[0];
+              if (active) {
+                selectActiveToken(active.id);
+                return;
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('Could not fetch patient active tokens:', e.message);
+        }
+      }
+
+      // 2. Check localStorage saved token ID
+      const savedTokenId = typeof window !== 'undefined' ? localStorage.getItem('mediq_active_token_id') : null;
+      if (savedTokenId) {
+        fetchTokenStatus(savedTokenId);
+      } else {
+        // Fallback demo token for non-authenticated exploration
+        fetchTokenStatus('tok-103');
+      }
+    };
+
+    resolveActiveToken();
+    fetchHospitalQueue('hosp-1');
+  }, [user, fetchTokenStatus, fetchHospitalQueue, selectActiveToken]);
+
   // Setup Real-time Socket.IO Listeners
   useEffect(() => {
-    // Join default rooms
     socket.emit('join_hospital', 'hosp-1');
     socket.emit('join_department', 'dept-1');
 
@@ -70,12 +120,10 @@ export const QueueProvider = ({ children }) => {
         playEmergencyAlert();
       }
 
-      // Re-fetch state automatically without page refresh
+      // Refresh queue state automatically without page refresh
       fetchHospitalQueue('hosp-1');
-      if (activeToken) {
+      if (activeToken?.id) {
         fetchTokenStatus(activeToken.id);
-      } else {
-        fetchTokenStatus('tok-103');
       }
     };
 
@@ -90,31 +138,28 @@ export const QueueProvider = ({ children }) => {
     };
   }, [fetchHospitalQueue, fetchTokenStatus, activeToken]);
 
-  // Initial Load
-  useEffect(() => {
-    fetchTokenStatus('tok-103');
-    fetchHospitalQueue('hosp-1');
-  }, [fetchTokenStatus, fetchHospitalQueue]);
-
   // Token Actions
   const generateToken = async (tokenData) => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/tokens`, {
+      const res = await apiFetch('/api/tokens', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(tokenData)
       });
       if (res.ok) {
         const newToken = await res.json();
         setActiveToken(newToken);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('mediq_active_token_id', newToken.id);
+        }
         socket.emit('join_token', newToken.id);
         fetchHospitalQueue(tokenData.hospital_id || 'hosp-1');
         setLoading(false);
         return { success: true, token: newToken };
       }
+      const errData = await res.json().catch(() => ({}));
       setLoading(false);
-      return { success: false, error: 'Failed to generate token' };
+      return { success: false, error: errData.error || 'Failed to generate token' };
     } catch (err) {
       setLoading(false);
       return { success: false, error: err.message };
@@ -123,9 +168,8 @@ export const QueueProvider = ({ children }) => {
 
   const createWalkInToken = async (tokenData) => {
     try {
-      const res = await fetch(`${API_BASE}/api/tokens/walkin`, {
+      const res = await apiFetch('/api/tokens/walkin', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(tokenData)
       });
       if (res.ok) {
@@ -133,7 +177,8 @@ export const QueueProvider = ({ children }) => {
         fetchHospitalQueue(tokenData.hospital_id || 'hosp-1');
         return { success: true, token };
       }
-      return { success: false, error: 'Failed to create walk-in token' };
+      const errData = await res.json().catch(() => ({}));
+      return { success: false, error: errData.error || 'Failed to create walk-in token' };
     } catch (err) {
       return { success: false, error: err.message };
     }
@@ -141,9 +186,8 @@ export const QueueProvider = ({ children }) => {
 
   const callNextPatient = async (hospitalId = 'hosp-1', departmentId = 'all') => {
     try {
-      const res = await fetch(`${API_BASE}/api/tokens/next/call`, {
+      const res = await apiFetch('/api/tokens/next/call', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ hospital_id: hospitalId, department_id: departmentId })
       });
       if (res.ok) {
@@ -152,7 +196,8 @@ export const QueueProvider = ({ children }) => {
         fetchHospitalQueue(hospitalId);
         return { success: true, token: calledToken };
       }
-      return { success: false, error: 'No waiting patients' };
+      const errData = await res.json().catch(() => ({}));
+      return { success: false, error: errData.error || errData.message || 'No waiting patients' };
     } catch (err) {
       return { success: false, error: err.message };
     }
@@ -160,7 +205,7 @@ export const QueueProvider = ({ children }) => {
 
   const startConsultation = async (tokenId) => {
     try {
-      const res = await fetch(`${API_BASE}/api/tokens/${tokenId}/start-consultation`, { method: 'PATCH' });
+      const res = await apiFetch(`/api/tokens/${tokenId}/start-consultation`, { method: 'PATCH' });
       if (res.ok) {
         const token = await res.json();
         fetchHospitalQueue('hosp-1');
@@ -174,7 +219,7 @@ export const QueueProvider = ({ children }) => {
 
   const completeToken = async (tokenId) => {
     try {
-      const res = await fetch(`${API_BASE}/api/tokens/${tokenId}/complete`, { method: 'PATCH' });
+      const res = await apiFetch(`/api/tokens/${tokenId}/complete`, { method: 'PATCH' });
       if (res.ok) {
         fetchHospitalQueue('hosp-1');
         return { success: true };
@@ -187,7 +232,7 @@ export const QueueProvider = ({ children }) => {
 
   const skipToken = async (tokenId) => {
     try {
-      const res = await fetch(`${API_BASE}/api/tokens/${tokenId}/skip`, { method: 'PATCH' });
+      const res = await apiFetch(`/api/tokens/${tokenId}/skip`, { method: 'PATCH' });
       if (res.ok) {
         fetchHospitalQueue('hosp-1');
         return { success: true };
@@ -200,7 +245,7 @@ export const QueueProvider = ({ children }) => {
 
   const cancelToken = async (tokenId) => {
     try {
-      const res = await fetch(`${API_BASE}/api/tokens/${tokenId}/cancel`, { method: 'PATCH' });
+      const res = await apiFetch(`/api/tokens/${tokenId}/cancel`, { method: 'PATCH' });
       if (res.ok) {
         fetchHospitalQueue('hosp-1');
         if (activeToken?.id === tokenId) {
@@ -216,9 +261,8 @@ export const QueueProvider = ({ children }) => {
 
   const updatePatientIntent = async (tokenId, intentStatus) => {
     try {
-      const res = await fetch(`${API_BASE}/api/tokens/${tokenId}/intent`, {
+      const res = await apiFetch(`/api/tokens/${tokenId}/intent`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ intent_status: intentStatus })
       });
       if (res.ok) {
@@ -235,9 +279,8 @@ export const QueueProvider = ({ children }) => {
 
   const assignTokenPriority = async (tokenId, priority, reason) => {
     try {
-      const res = await fetch(`${API_BASE}/api/tokens/${tokenId}/priority`, {
+      const res = await apiFetch(`/api/tokens/${tokenId}/priority`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ priority, reason })
       });
       if (res.ok) {
@@ -253,9 +296,8 @@ export const QueueProvider = ({ children }) => {
 
   const togglePauseQueue = async (hospitalId = 'hosp-1', departmentId = 'dept-1', isPaused, reason = '') => {
     try {
-      const res = await fetch(`${API_BASE}/api/receptionist/${hospitalId}/pause`, {
+      const res = await apiFetch(`/api/receptionist/${hospitalId}/pause`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ department_id: departmentId, is_paused: isPaused, reason })
       });
       if (res.ok) {
@@ -272,9 +314,8 @@ export const QueueProvider = ({ children }) => {
 
   const updateDoctorStatus = async (doctorId = 'doc-1', status) => {
     try {
-      const res = await fetch(`${API_BASE}/api/doctor/${doctorId}/status`, {
+      const res = await apiFetch(`/api/doctor/${doctorId}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
       });
       if (res.ok) {
@@ -300,6 +341,7 @@ export const QueueProvider = ({ children }) => {
       error,
       fetchTokenStatus,
       fetchHospitalQueue,
+      selectActiveToken,
       generateToken,
       createWalkInToken,
       callNextPatient,

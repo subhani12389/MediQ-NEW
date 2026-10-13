@@ -3,7 +3,8 @@ import { generateJWT } from '../config/jwt.js';
 
 export const signup = async (req, res) => {
   try {
-    const { full_name, email, phone, role = 'patient', password } = req.body;
+    const { email, phone, role = 'patient', password } = req.body;
+    const full_name = req.body.full_name || req.body.fullName;
 
     if (!email || !full_name) {
       return res.status(400).json({ error: 'Full name and email are required' });

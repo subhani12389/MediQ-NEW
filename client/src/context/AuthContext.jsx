@@ -2,51 +2,32 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
-export const DEMO_ACCOUNTS = {
-  patient: {
-    id: 'user-1',
-    full_name: 'Rahul Sharma',
-    email: 'patient@mediq.com',
-    phone: '+91 9876543210',
-    role: 'patient'
-  },
-  receptionist: {
-    id: 'rec-user-1',
-    full_name: 'Priya Singh',
-    email: 'receptionist@cityhospital.com',
-    phone: '+91 9811223344',
-    role: 'receptionist',
-    hospital_id: 'hosp-1',
-    department_id: 'dept-1'
-  },
-  doctor: {
-    id: 'doc-user-1',
-    doctor_id: 'doc-1',
-    full_name: 'Dr. Rajesh Sharma',
-    email: 'doctor@cityhospital.com',
-    phone: '+91 9822334455',
-    role: 'doctor',
-    hospital_id: 'hosp-1',
-    department_id: 'dept-1'
-  },
-  admin: {
-    id: 'admin-user-1',
-    full_name: 'System Admin',
-    email: 'admin@mediq.com',
-    phone: '+91 9999988888',
-    role: 'admin'
-  }
+const API_BASE = import.meta.env.VITE_API_BASE_URL || (typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:5000' : '');
+
+export const DEMO_EMAILS = {
+  patient: 'patient@mediq.com',
+  receptionist: 'receptionist@cityhospital.com',
+  doctor: 'doctor@cityhospital.com',
+  admin: 'admin@mediq.com'
 };
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('mediq_user');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('mediq_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
   });
 
-  const [token, setToken] = useState(() => localStorage.getItem('mediq_jwt_token') || null);
+  const [token, setToken] = useState(() => {
+    return localStorage.getItem('mediq_jwt_token') || null;
+  });
+
   const [loading, setLoading] = useState(false);
 
+  // Sync state to localStorage
   useEffect(() => {
     if (user) {
       localStorage.setItem('mediq_user', JSON.stringify(user));
@@ -63,36 +44,82 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token]);
 
-  const loginWithDemo = (roleKey) => {
-    const demoUser = DEMO_ACCOUNTS[roleKey] || DEMO_ACCOUNTS.patient;
-    const mockToken = `demo_jwt_token_${roleKey}_${Date.now()}`;
-    setUser(demoUser);
-    setToken(mockToken);
-    return demoUser;
-  };
+  // Verify session on initial app mount
+  useEffect(() => {
+    const verifySession = async () => {
+      const currentToken = localStorage.getItem('mediq_jwt_token');
+      if (!currentToken) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/me`, {
+          headers: { 'Authorization': `Bearer ${currentToken}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user) setUser(data.user);
+        } else if (res.status === 401) {
+          // Token expired or invalid
+          logout();
+        }
+      } catch (err) {
+        console.warn('Session verification fallback (offline mode):', err.message);
+      }
+    };
+
+    verifySession();
+  }, []);
 
   const login = async (email, password, role) => {
     setLoading(true);
     try {
-      // Find matching demo account or create session
-      let matchedRole = 'patient';
-      if (email.includes('receptionist')) matchedRole = 'receptionist';
-      else if (email.includes('doctor')) matchedRole = 'doctor';
-      else if (email.includes('admin')) matchedRole = 'admin';
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, role })
+      });
 
-      const demoUser = DEMO_ACCOUNTS[matchedRole] || {
-        id: `user-${Date.now()}`,
-        full_name: email.split('@')[0].replace('.', ' '),
-        email,
-        phone: '+91 9876543210',
-        role: role || matchedRole
-      };
-
-      const jwtToken = `jwt_token_${Date.now()}`;
-      setUser(demoUser);
-      setToken(jwtToken);
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data.user);
+        setToken(data.token);
+        setLoading(false);
+        return { success: true, user: data.user };
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        setLoading(false);
+        return { success: false, error: errorData.error || 'Invalid credentials' };
+      }
+    } catch (err) {
       setLoading(false);
-      return { success: true, user: demoUser };
+      return { success: false, error: err.message };
+    }
+  };
+
+  const loginWithDemo = async (roleKey) => {
+    const email = DEMO_EMAILS[roleKey] || DEMO_EMAILS.patient;
+    return await login(email, 'demo1234', roleKey);
+  };
+
+  const signup = async (fullName, email, phone, password, role = 'patient') => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ full_name: fullName, email, phone, password, role })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data.user);
+        setToken(data.token);
+        setLoading(false);
+        return { success: true, user: data.user };
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setLoading(false);
+        return { success: false, error: errData.error || 'Registration failed' };
+      }
     } catch (err) {
       setLoading(false);
       return { success: false, error: err.message };
@@ -104,6 +131,7 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     localStorage.removeItem('mediq_user');
     localStorage.removeItem('mediq_jwt_token');
+    localStorage.removeItem('mediq_active_token_id');
   };
 
   return (
@@ -113,8 +141,9 @@ export const AuthProvider = ({ children }) => {
       loading,
       login,
       loginWithDemo,
+      signup,
       logout,
-      isAuthenticated: Boolean(user),
+      isAuthenticated: Boolean(user && token),
       isPatient: user?.role === 'patient',
       isReceptionist: user?.role === 'receptionist',
       isDoctor: user?.role === 'doctor',

@@ -104,6 +104,11 @@ export const getTokenByRef = async (req, res) => {
 export const getPatientTokens = async (req, res) => {
   try {
     const { patientId } = req.params;
+
+    if (req.user?.role === 'patient' && req.user?.id !== patientId) {
+      return res.status(403).json({ error: 'Access Denied: You can only view your own tokens' });
+    }
+
     const tokens = store.getTokensByPatient(patientId);
     return res.json(tokens);
   } catch (error) {
@@ -115,13 +120,15 @@ export const getPatientTokens = async (req, res) => {
 export const callNextToken = async (req, res) => {
   try {
     const { id } = req.params;
-    const { hospital_id, department_id } = req.body;
+    const { hospital_id, department_id } = req.body || {};
 
     if (id === 'next' || !id) {
-      const result = store.callNextPatient(hospital_id, department_id, req.user);
-      if (result.error) return res.status(404).json({ message: result.error });
+      const hospId = hospital_id || 'hosp-1';
+      const deptId = department_id || 'all';
+      const result = store.callNextPatient(hospId, deptId, req.user);
+      if (result.error) return res.status(404).json({ message: result.error, error: result.error });
 
-      emitQueueUpdate(hospital_id, department_id, {
+      emitQueueUpdate(hospId, deptId, {
         type: 'TOKEN_CALLED',
         token: result.token
       });
@@ -201,6 +208,13 @@ export const skipToken = async (req, res) => {
 export const cancelToken = async (req, res) => {
   try {
     const { id } = req.params;
+
+    const existing = store.getTokenById(id);
+    if (!existing) return res.status(404).json({ error: 'Token not found' });
+    if (req.user?.role === 'patient' && existing.patient_id !== req.user.id) {
+      return res.status(403).json({ error: 'Access Denied: You cannot cancel another patient’s token' });
+    }
+
     const result = store.updateTokenStatus(id, 'cancelled', req.user);
     if (result.error) return res.status(400).json({ error: result.error });
 
@@ -220,6 +234,12 @@ export const updatePatientIntent = async (req, res) => {
   try {
     const { id } = req.params;
     const { intent_status } = req.body; // 'on_my_way', 'cant_come', 'arrived'
+
+    const existing = store.getTokenById(id);
+    if (!existing) return res.status(404).json({ error: 'Token not found' });
+    if (req.user?.role === 'patient' && existing.patient_id !== req.user.id) {
+      return res.status(403).json({ error: 'Access Denied: You cannot update another patient’s intent' });
+    }
 
     const result = store.updatePatientIntent(id, intent_status, req.user);
     if (result.error) return res.status(400).json({ error: result.error });
