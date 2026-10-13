@@ -1,18 +1,20 @@
 import { store } from '../data/store.js';
-import { supabase, isSupabaseConfigured } from '../config/supabaseClient.js';
+import Hospital from '../models/Hospital.js';
+import Department from '../models/Department.js';
+import { isMongoConnected } from '../config/db.js';
 
 export const getHospitals = async (req, res) => {
   try {
     const { city, specialty, query } = req.query;
 
-    if (isSupabaseConfigured) {
-      let supabaseQuery = supabase.from('hospitals').select('*');
-      if (city) supabaseQuery = supabaseQuery.eq('city', city);
-      if (specialty) supabaseQuery = supabaseQuery.contains('specialties', [specialty]);
-      if (query) supabaseQuery = supabaseQuery.ilike('name', `%${query}%`);
+    if (isMongoConnected()) {
+      const filter = {};
+      if (city) filter.city = new RegExp(`^${city}$`, 'i');
+      if (specialty) filter.specialties = specialty;
+      if (query) filter.name = new RegExp(query, 'i');
 
-      const { data, error } = await supabaseQuery;
-      if (!error && data) return res.json(data);
+      const data = await Hospital.find(filter).lean();
+      if (data && data.length > 0) return res.json(data);
     }
 
     const list = store.getHospitals({ city, specialty, query });
@@ -27,13 +29,9 @@ export const getHospitalById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (isSupabaseConfigured) {
-      const { data, error } = await supabase
-        .from('hospitals')
-        .select('*')
-        .eq('id', id)
-        .single();
-      if (!error && data) return res.json(data);
+    if (isMongoConnected()) {
+      const hospital = await Hospital.findOne({ id }).lean();
+      if (hospital) return res.json(hospital);
     }
 
     const hospital = store.getHospitalById(id);
@@ -51,12 +49,9 @@ export const getDepartmentsByHospitalId = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (isSupabaseConfigured) {
-      const { data, error } = await supabase
-        .from('departments')
-        .select('*')
-        .eq('hospital_id', id);
-      if (!error && data) return res.json(data);
+    if (isMongoConnected()) {
+      const depts = await Department.find({ hospital_id: id }).lean();
+      if (depts && depts.length > 0) return res.json(depts);
     }
 
     const depts = store.getDepartmentsByHospitalId(id);
@@ -74,16 +69,12 @@ export const createHospital = async (req, res) => {
       return res.status(400).json({ error: 'Hospital name and city are required' });
     }
 
-    if (isSupabaseConfigured) {
-      const { data, error } = await supabase
-        .from('hospitals')
-        .insert([{ name, location, city, address, specialties: specialties || [], avg_consultation_minutes: avg_consultation_minutes || 12 }])
-        .select()
-        .single();
-      if (!error && data) return res.status(201).json(data);
+    const newHosp = store.addHospital({ name, location, city, address, specialties, avg_consultation_minutes });
+
+    if (isMongoConnected()) {
+      await Hospital.create(newHosp).catch(err => console.warn('Mongo create hospital error:', err.message));
     }
 
-    const newHosp = store.addHospital({ name, location, city, address, specialties, avg_consultation_minutes });
     return res.status(201).json(newHosp);
   } catch (error) {
     console.error('Create hospital error:', error);

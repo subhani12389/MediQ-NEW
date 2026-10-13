@@ -22,7 +22,7 @@ export default function Footer() {
             </p>
             <div className="flex items-center gap-2 text-xs text-teal-400">
               <ShieldCheck className="w-4 h-4" />
-              <span>Supabase Realtime & RLS Protected</span>
+              <span>MongoDB &amp; Real-Time Socket Sync</span>
             </div>
           </div>
 
@@ -78,7 +78,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-slate-800 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500">
-          <p>© {new Date().getFullYear()} MediQ Technologies. Built with React, Express & Supabase.</p>
+          <p>© {new Date().getFullYear()} MediQ Technologies. Built with React, Express &amp; MongoDB.</p>
           <div className="flex items-center gap-1 mt-2 sm:mt-0">
             <span>Crafted with</span>
             <Heart className="w-3.5 h-3.5 text-[#C81E3A] fill-[#C81E3A]" />

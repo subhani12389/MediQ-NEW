@@ -1,5 +1,9 @@
-// Production-Grade In-Memory Data Store & Queue Management Engine
-import { supabase, isSupabaseConfigured } from '../config/supabaseClient.js';
+// Production-Grade In-Memory Data Store & Queue Management Engine (with MongoDB Persistence)
+import { isMongoConnected } from '../config/db.js';
+import User from '../models/User.js';
+import Token from '../models/Token.js';
+import Consultation from '../models/Consultation.js';
+import AuditLog from '../models/AuditLog.js';
 
 let hospitals = [
   {
@@ -359,6 +363,9 @@ function logAudit({ user, action, tokenId, tokenNumber, previousStatus, newStatu
     timestamp: new Date().toISOString()
   };
   auditLogs.unshift(newLog);
+  if (isMongoConnected()) {
+    AuditLog.create(newLog).catch(err => console.warn('Mongo audit log error:', err.message));
+  }
   return newLog;
 }
 
@@ -468,16 +475,9 @@ export const store = {
     const newUser = { id: `user-${Date.now()}`, ...userData };
     users.push(newUser);
 
-    if (isSupabaseConfigured && supabase) {
-      supabase.from('users').upsert({
-        id: newUser.id,
-        full_name: newUser.full_name,
-        phone: newUser.phone,
-        email: newUser.email,
-        role: newUser.role
-      }).then(({ error }) => {
-        if (error) console.warn('Supabase user upsert sync error:', error.message);
-      });
+    if (isMongoConnected()) {
+      User.findOneAndUpdate({ email: newUser.email }, newUser, { upsert: true, new: true })
+        .catch(err => console.warn('Mongo user upsert error:', err.message));
     }
 
     return newUser;
@@ -486,10 +486,9 @@ export const store = {
     const user = users.find(u => u.id === userId);
     if (!user) return null;
     user.role = role;
-    if (isSupabaseConfigured && supabase) {
-      supabase.from('users').update({ role }).eq('id', userId).then(({ error }) => {
-        if (error) console.warn('Supabase user role update sync error:', error.message);
-      });
+    if (isMongoConnected()) {
+      User.findOneAndUpdate({ id: userId }, { role })
+        .catch(err => console.warn('Mongo user role update error:', err.message));
     }
     return user;
   },
@@ -622,18 +621,9 @@ export const store = {
 
     tokens.push(newToken);
 
-    if (isSupabaseConfigured && supabase) {
-      supabase.from('tokens').insert({
-        token_number: newToken.token_number,
-        patient_id: newToken.patient_id,
-        hospital_id: newToken.hospital_id,
-        department_id: newToken.department_id,
-        status: newToken.status,
-        notes: newToken.notes,
-        created_at: newToken.created_at
-      }).then(({ error }) => {
-        if (error) console.warn('Supabase token insert sync error:', error.message);
-      });
+    if (isMongoConnected()) {
+      Token.create(newToken)
+        .catch(err => console.warn('Mongo token insert error:', err.message));
     }
 
     logAudit({
@@ -700,14 +690,12 @@ export const store = {
       details: `Token #${token.token_number} status changed to ${newStatus.toUpperCase()}`
     });
 
-    if (isSupabaseConfigured && supabase) {
-      supabase.from('tokens').update({
+    if (isMongoConnected()) {
+      Token.findOneAndUpdate({ token_number: token.token_number }, {
         status: newStatus,
         called_at: token.called_at,
         completed_at: token.completed_at
-      }).eq('token_number', token.token_number).then(({ error }) => {
-        if (error) console.warn('Supabase token update sync error:', error.message);
-      });
+      }).catch(err => console.warn('Mongo token update error:', err.message));
     }
 
     return { success: true, token: store.getTokenById(tokenId) };
@@ -977,28 +965,9 @@ export const store = {
       store.updateTokenStatus(queue_token_id, 'completed', user);
     }
 
-    if (isSupabaseConfigured && supabase) {
-      supabase.from('consultations').insert({
-        patient_id: newConsultation.patient_id,
-        doctor_id: newConsultation.doctor_id,
-        doctor_name: newConsultation.doctor_name,
-        queue_token_id: newConsultation.queue_token_id,
-        department_id: newConsultation.department_id,
-        department_name: newConsultation.department_name,
-        hospital_id: newConsultation.hospital_id,
-        hospital_name: newConsultation.hospital_name,
-        chief_complaint: newConsultation.chief_complaint,
-        symptoms: newConsultation.symptoms,
-        observations: newConsultation.observations,
-        diagnosis: newConsultation.diagnosis,
-        treatment_advice: newConsultation.treatment_advice,
-        prescription_notes: newConsultation.prescription_notes,
-        follow_up_instructions: newConsultation.follow_up_instructions,
-        additional_remarks: newConsultation.additional_remarks,
-        visit_date: newConsultation.visit_date
-      }).then(({ error }) => {
-        if (error) console.warn('Supabase consultation insert sync error:', error.message);
-      });
+    if (isMongoConnected()) {
+      Consultation.create(newConsultation)
+        .catch(err => console.warn('Mongo consultation insert error:', err.message));
     }
 
     return newConsultation;

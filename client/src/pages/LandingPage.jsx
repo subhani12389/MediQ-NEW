@@ -46,7 +46,7 @@ export default function LandingPage() {
               </h1>
 
               <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed font-medium">
-                Generate a digital OPD token from home, track your live queue position with Supabase real-time sync, and arrive at the hospital right when your turn is 10 minutes away.
+                Generate a digital OPD token from home, track your live queue position with instant real-time sync, and arrive at the hospital right when your turn is 10 minutes away.
               </p>
 
               {/* Action Buttons */}
@@ -77,7 +77,7 @@ export default function LandingPage() {
                 </div>
                 <div className="bg-white/60 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 backdrop-blur-sm">
                   <div className="font-heading font-black text-2xl text-[#C81E3A]">Realtime</div>
-                  <div className="text-xs text-slate-500 font-semibold">Live Supabase Sync</div>
+                  <div className="text-xs text-slate-500 font-semibold">Live Queue Sync</div>
                 </div>
                 <div className="bg-white/60 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 backdrop-blur-sm">
                   <div className="font-heading font-black text-2xl text-emerald-600 dark:text-emerald-400">Zero</div>
